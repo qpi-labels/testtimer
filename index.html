@@ -99,6 +99,7 @@
                 <button class="seg-btn flex-fill" id="tabBtnCalendar" type="button" role="tab">캘린더</button>
                 <button class="seg-btn flex-fill" id="tabBtnSubjects" type="button" role="tab">과목</button>
                 <button class="seg-btn flex-fill" id="tabBtnGoal" type="button" role="tab">목표</button>
+                <button class="seg-btn flex-fill" id="tabBtnLeaderboard" type="button" role="tab">랭킹</button>
             </div>
 
             <div class="sheet-scroll" id="panelScroll">
@@ -199,6 +200,17 @@
                     </div>
                     <div class="bar margin"><div id="goalProgressBar"></div></div>
                 </div>
+            </section>
+
+            <section class="tab" id="tabLeaderboard" role="tabpanel">
+                <div class="item flex-row">
+                    <div>
+                        <div class="item-name">오늘의 랭킹</div>
+                        <div class="sheet-sub" id="loginStatusText">Google 로그인 후 참여 가능</div>
+                    </div>
+                    <button class="modal-btn primary" id="loginBtn" type="button">로그인</button>
+                </div>
+                <div class="list" id="leaderboardList"></div>
             </section>
             </div>
         </div>

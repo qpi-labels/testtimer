@@ -1,7 +1,8 @@
-import { App } from './data.js';
+import { App, loginWithGoogle, logout } from './data.js';
 import { renderAll, renderHUD, renderPanel } from './render.js';
 import { commitDelta, endSession } from './timer.js';
 import { dateKey, startOfDay, ensureDay, uid, fmtHMS } from './util.js';
+import { auth, onAuthStateChanged } from './firebase.js';
 
 export const ui = {};
 const ids = [
@@ -13,8 +14,8 @@ const ids = [
     'goalHours', 'goalMinutes', 'openPanelBtn', 'closePanelBtn', 'addSubjectBtn',
     'addSubjectBtn2', 'modeTotalBtn', 'modeSubjectBtn', 'studyToggleBtn',
     'studyToggleIcon', 'studyToggleText', 'panelSheet', 'tabBtnStats',
-    'tabBtnCalendar', 'tabBtnSubjects', 'tabBtnGoal', 'tabStats', 'tabCalendar',
-    'tabSubjects', 'tabGoal', 'calPrevBtn', 'calNextBtn', 'goalResetBtn',
+    'tabBtnCalendar', 'tabBtnSubjects', 'tabBtnGoal', 'tabBtnLeaderboard', 'tabStats', 'tabCalendar',
+    'tabSubjects', 'tabGoal', 'tabLeaderboard', 'loginBtn', 'loginStatusText', 'leaderboardList', 'calPrevBtn', 'calNextBtn', 'goalResetBtn',
     'goalSaveBtn', 'subjectModal', 'subjectModalTitle', 'subjectNameInput',
     'colorDots', 'subjectColorInput', 'subjectDeleteBtn', 'subjectCancelBtn',
     'subjectSaveBtn', 'dayDetailModal', 'dayDetailTitle', 'dayDetailSub',
@@ -176,7 +177,31 @@ if (ui.closePanelBtn) {
     });
 }
 
-const tabs = ['Stats', 'Calendar', 'Subjects', 'Goal'];
+if (ui.loginBtn) {
+    ui.loginBtn.addEventListener('click', () => {
+        if (auth.currentUser) {
+            logout();
+        } else {
+            loginWithGoogle();
+        }
+    });
+}
+
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        if (ui.loginBtn) ui.loginBtn.textContent = '로그아웃';
+        if (ui.loginStatusText) ui.loginStatusText.textContent = `${user.displayName}님 환영합니다`;
+    } else {
+        if (ui.loginBtn) ui.loginBtn.textContent = '로그인';
+        if (ui.loginStatusText) ui.loginStatusText.textContent = 'Google 로그인 후 참여 가능';
+    }
+    // Re-render panel if leaderboard is open
+    if (App.store.settings.panelTab === 'leaderboard') {
+        renderPanel();
+    }
+});
+
+const tabs = ['Stats', 'Calendar', 'Subjects', 'Goal', 'Leaderboard'];
 tabs.forEach(tab => {
     const btn = ui[`tabBtn${tab}`];
     if (btn) {

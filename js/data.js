@@ -1,4 +1,5 @@
 import { startOfMonth, dateKey, fmtHMS, uid } from './util.js';
+import { auth, db, signInWithPopup, googleProvider, onAuthStateChanged, signOut, doc, setDoc, serverTimestamp } from './firebase.js';
 
 const YPT_STORE_KEY_V2 = 'ypt_local_v2';
 const LEGACY_STORE_KEY_V1 = 'studyTracker_v1';
@@ -7,20 +8,16 @@ const LEGACY_STORE_KEY_V1 = 'studyTracker_v1';
 const AppStorage = (() => {
 	const defaultStore = () => ({
 		version: 2,
-		subjects: [
-			// 기본 과목은 강제하지 않음 (사용자가 +로 추가)
-		],
+		subjects: [],
 		settings: {
-			dailyGoalMs: 2 * 60 * 60 * 1000, // 2h default
+			dailyGoalMs: 2 * 60 * 60 * 1000,
 			lastSubjectId: '',
-			viewMode: 'total',  // 'total' | 'subject'
-			panelTab: 'stats',  // 'stats' | 'calendar' | 'subjects' | 'goal'
-			statsPeriod: 'today', // 'today' | 'week' | 'month'
+			viewMode: 'total',
+			panelTab: 'stats',
+			statsPeriod: 'today',
 			calendarMonthTs: startOfMonth(Date.now()),
 		},
-		days: {
-			// "YYYY-MM-DD": { totalMs, subjects: {id: ms}, sessions: [{start,end,subjectId}], longestFocusMs }
-		},
+		days: {},
 		meta: {
 			bestFocusMs: 0,
 		}
@@ -35,6 +32,7 @@ const AppStorage = (() => {
 
 	function save(store) {
 		localStorage.setItem(YPT_STORE_KEY_V2, JSON.stringify(store));
+		syncToFirestore();
 	}
 
 	function migrateLegacyIfNeeded() {
@@ -44,8 +42,6 @@ const AppStorage = (() => {
 		const legacy = loadRaw(LEGACY_STORE_KEY_V1);
 		if (!legacy) return null;
 
-		// legacy schema:
-		// { subjects:[{id,name}], days:{[date]:{totalSeconds, unclassifiedSeconds, subjectSeconds}}, meta:{mode, selectedSubjectId} }
 		const st = defaultStore();
 		try {
 			const colorPresets = ['#90caf9','#a5d6a7','#f48fb1','#ffcc80','#ce93d8','#80cbc4','#fff59d','#b0bec5'];
@@ -82,7 +78,6 @@ const AppStorage = (() => {
 		const base = defaultStore();
 		if (!store || typeof store !== 'object') return base;
 		if (store.version !== 2) {
-			// 미래 버전 대비: 최소 필드만 보정
 			store.version = 2;
 		}
 		store.subjects = Array.isArray(store.subjects) ? store.subjects : [];
@@ -90,7 +85,6 @@ const AppStorage = (() => {
 		store.days = store.days && typeof store.days === 'object' ? store.days : {};
 		store.meta = { ...base.meta, ...(store.meta || {}) };
 
-		// ensure subject structure
 		store.subjects = store.subjects.map(s => ({
 			id: s.id || uid('s'),
 			name: (s.name || '과목').slice(0, 24),
@@ -98,7 +92,6 @@ const AppStorage = (() => {
 			createdAt: s.createdAt || Date.now(),
 		}));
 
-		// ensure day structure
 		for (const dk of Object.keys(store.days)) {
 			const d = store.days[dk];
 			if (!d || typeof d !== 'object') continue;
@@ -121,18 +114,17 @@ const AppStorage = (() => {
 	return { load, save, defaultStore };
 })();
 
-// ---------- Global App State ----------
 export const App = {
 	store: AppStorage.load(),
 	save: () => AppStorage.save(App.store),
 	reset: () => { App.store = AppStorage.defaultStore(); App.save(); },
 	runtime: {
 		running: false,
-		lastTs: 0,           // 마지막 tick 기준
-		activeSubjectId: '', // 현재 선택 과목(빈 문자열 = 미분류)
-		sessionStartTs: 0,   // 현재 세션 시작(과목 세그먼트 단위)
+		lastTs: 0,
+		activeSubjectId: '',
+		sessionStartTs: 0,
 		sessionSubjectId: '',
-		focusStartTs: 0,     // "최장 집중"용: 실행 시작 시각(중단까지)
+		focusStartTs: 0,
 		rafId: 0,
 		lastUiTs: 0,
 		lastSaveTs: 0,
@@ -141,30 +133,72 @@ export const App = {
 };
 
 window.appdump = () => {
-	console.log("store:");
-	console.log(App.store);
-	console.log("runtime:");
-	console.log(App.runtime);
+	console.log("store:", App.store);
+	console.log("runtime:", App.runtime);
 };
 
+// Firebase Auth & Sync
+let currentUser = null;
+let lastSyncMs = 0;
 
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzh4V2v2v4mzSkQQkf49FrRjRb3pCsnx4I0T4QBgC4CA8YA9JaRJmgOYee9Tq6hCrq-/exec";
+onAuthStateChanged(auth, (user) => {
+    currentUser = user;
+    if (user) {
+        console.log("Logged in as:", user.displayName);
+        syncToFirestore();
+    }
+});
 
-//구글 로그인 넣을지 말지는 나중에 물어보기
-let userName = localStorage.getItem('ypt_user_name');
-if (!userName) {
-	userName = prompt("학번_이름을 입력해주세요");
-	if (!userName) userName = "익명";
-	localStorage.setItem('ypt_user_name', userName);
+export async function loginWithGoogle() {
+    try {
+        await signInWithPopup(auth, googleProvider);
+    } catch (error) {
+        console.error("Login failed:", error);
+    }
 }
 
+export async function logout() {
+    try {
+        await signOut(auth);
+    } catch (error) {
+        console.error("Logout failed:", error);
+    }
+}
+
+async function syncToFirestore() {
+    if (!currentUser) return;
+    const dk = dateKey(Date.now());
+    const dayData = App.store.days[dk];
+    if (!dayData || dayData.totalMs <= 0) return;
+    
+    // Throttle sync to every 10 seconds
+    const now = Date.now();
+    if (now - lastSyncMs < 10000) return;
+    lastSyncMs = now;
+
+    const recordId = `${dk}_${currentUser.uid}`;
+    try {
+        await setDoc(doc(db, 'daily_records', recordId), {
+            uid: currentUser.uid,
+            userName: currentUser.displayName || '익명',
+            date: dk,
+            totalMs: dayData.totalMs,
+            updatedAt: serverTimestamp()
+        });
+    } catch (error) {
+        console.error("Firestore sync error:", error);
+    }
+}
+
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzh4V2v2v4mzSkQQkf49FrRjRb3pCsnx4I0T4QBgC4CA8YA9JaRJmgOYee9Tq6hCrq-/exec";
 
 async function sendDataToSheet(targetDateTs) {
 	const key = dateKey(targetDateTs);
 	const dayData = App.store.days[key];
 	
-	// 데이터가 없거나 이미 보냈다면 중단
 	if (!dayData || dayData.totalMs <= 0) return;
+
+    const userName = currentUser ? currentUser.displayName : (localStorage.getItem('ypt_user_name') || '익명');
 
 	const payload = {
 		date: key,
@@ -187,7 +221,6 @@ async function sendDataToSheet(targetDateTs) {
 	}
 }
 
-//이동
 export async function initAutoSync() {
 	const allDays = Object.keys(App.store.days);
 	const todayKey = dateKey(Date.now());
@@ -222,10 +255,7 @@ export function testSpecificTimeSync(targetHour, targetMinute) {
 
 		if (currentH === targetHour && currentM === targetMinute) {
 			console.log("완");
-			
 			sendDataToSheet(Date.now());
-			
-			// 테스트 전송은 한 번만 실행되도록 인터벌 종료 (원치 않으면 주석 처리)
 			clearInterval(testInterval); 
 		}
 	}, 10000); 

@@ -1,7 +1,60 @@
 import { ui, openSubjectModal, setActiveSubject, startTimer, maskChipbar, openDayDetail } from "./ui.js";
 import { fmtHMS, escapeHtml, startOfWeek, dateKey, startOfMonth, daysInMonth, pad2, clamp, ensureDay } from "./util.js";
 import { App } from "./data.js";
+import { db, auth, collection, query, where, orderBy, limit, onSnapshot } from './firebase.js';
 
+let leaderboardUnsubscribe = null;
+
+function renderLeaderboard() {
+	if (!auth.currentUser) {
+		ui.leaderboardList.innerHTML = '<div class="item"><div class="item-name">로그인이 필요합니다.</div></div>';
+		return;
+	}
+
+	ui.leaderboardList.innerHTML = '<div class="item"><div class="item-name">로딩 중...</div></div>';
+	
+	if (leaderboardUnsubscribe) {
+		leaderboardUnsubscribe();
+		leaderboardUnsubscribe = null;
+	}
+
+	const dk = dateKey(Date.now());
+	const q = query(
+		collection(db, 'daily_records'),
+		where('date', '==', dk),
+		orderBy('totalMs', 'desc'),
+		limit(50)
+	);
+
+	leaderboardUnsubscribe = onSnapshot(q, (snapshot) => {
+		ui.leaderboardList.innerHTML = '';
+		if (snapshot.empty) {
+			ui.leaderboardList.innerHTML = '<div class="item"><div class="item-name">아직 기록이 없습니다.</div></div>';
+			return;
+		}
+
+		let rank = 1;
+		snapshot.docs.forEach((doc) => {
+			const data = doc.data();
+			const isMe = auth.currentUser && data.uid === auth.currentUser.uid;
+			
+			const item = document.createElement('div');
+			item.className = 'item flex-row' + (isMe ? ' me' : '');
+			item.innerHTML = `
+				<div class="flex-row" style="gap: 12px;">
+					<div style="font-weight: 700; width: 24px; text-align: center; color: var(--primary);">${rank}</div>
+					<div class="item-name" style="font-weight: ${isMe ? '700' : '400'};">${escapeHtml(data.userName)}</div>
+				</div>
+				<div class="item-time">${fmtHMS(data.totalMs)}</div>
+			`;
+			ui.leaderboardList.appendChild(item);
+			rank++;
+		});
+	}, (error) => {
+		console.error("Leaderboard error:", error);
+		ui.leaderboardList.innerHTML = '<div class="item"><div class="item-name">랭킹을 불러올 수 없습니다.</div></div>';
+	});
+}
 
 // ---------- HUD rendering ----------
 function getDayTotalMs(dk) {
@@ -67,6 +120,9 @@ export function renderHUD() {
 
 	const mode = App.store.settings.viewMode || 'total';
 	ui.studyTime.textContent = fmtHMS((mode === 'total') ? totalMs : totalSubjectMs);
+	
+	if (ui.modeTotalBtn) ui.modeTotalBtn.classList.toggle('active', mode === 'total');
+	if (ui.modeSubjectBtn) ui.modeSubjectBtn.classList.toggle('active', mode === 'subject');
 
 	if (goal > 0) {
 		const pct = clamp((totalMs / goal) * 100, 0, 100);
@@ -92,6 +148,14 @@ export function renderHUD() {
 export function renderPanel() {
 	ui.panelSubtitle.textContent = `${dateKey()} · 오프라인`;
 
+	const tabs = ['stats', 'calendar', 'subjects', 'goal', 'leaderboard'];
+	tabs.forEach(t => {
+		const btn = ui[`tabBtn${t.charAt(0).toUpperCase() + t.slice(1)}`];
+		const section = ui[`tab${t.charAt(0).toUpperCase() + t.slice(1)}`];
+		if (btn) btn.classList.toggle('active', App.store.settings.panelTab === t);
+		if (section) section.classList.toggle('active', App.store.settings.panelTab === t);
+	});
+
 	switch (App.store.settings.panelTab) {
 		case 'stats':
 			renderStats(); break;
@@ -101,6 +165,8 @@ export function renderPanel() {
 			renderSubjects(); break;
 		case 'goal':
 			renderGoal(); break;
+		case 'leaderboard':
+			renderLeaderboard(); break;
 	}
 }
 

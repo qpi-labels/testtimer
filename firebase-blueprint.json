@@ -1,0 +1,41 @@
+{
+  "entities": {
+    "DailyRecord": {
+      "title": "DailyRecord",
+      "description": "A user's study record for a specific day.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "The user's ID."
+        },
+        "userName": {
+          "type": "string",
+          "description": "The user's display name."
+        },
+        "date": {
+          "type": "string",
+          "description": "The date of the record in YYYY-MM-DD format."
+        },
+        "totalMs": {
+          "type": "number",
+          "description": "Total study time in milliseconds."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The last time the record was updated."
+        }
+      },
+      "required": ["uid", "userName", "date", "totalMs", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/daily_records/{recordId}": {
+      "schema": {
+        "$ref": "#/entities/DailyRecord"
+      },
+      "description": "Daily study records for all users."
+    }
+  }
+}
