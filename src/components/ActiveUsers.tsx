@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Zap, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { api, ActiveUser } from '../api';
 
 function formatElapsed(startTime: number) {
@@ -12,39 +12,24 @@ function formatElapsed(startTime: number) {
   return `${s}초`;
 }
 
-const SUBJECT_EMOJI: Record<string, string> = {
-  '국어': '📖',
-  '수학': '📐',
-  '영어': '✏️',
-  '탐구': '🔬',
-  '기타': '📝',
-};
-
-function getEmoji(subject: string) {
-  return SUBJECT_EMOJI[subject] || '📚';
-}
-
 export function ActiveUsers() {
-  const [users, setUsers] = useState<ActiveUser[]>([]);
+  const [users, setUsers]   = useState<ActiveUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tick, setTick] = useState(0);
+  const [, setTick] = useState(0);
 
   const fetchUsers = async () => {
     setLoading(true);
-    try {
-      const data = await api.getActiveUsers();
-      setUsers(data);
-    } catch {}
+    try { setUsers(await api.getActiveUsers()); } catch {}
     finally { setLoading(false); }
   };
 
   useEffect(() => {
     fetchUsers();
-    const refresh = setInterval(fetchUsers, 30000);
-    return () => clearInterval(refresh);
+    const r = setInterval(fetchUsers, 30000);
+    return () => clearInterval(r);
   }, []);
 
-  // Tick every second to update elapsed times
+  // 1초마다 경과시간 갱신
   useEffect(() => {
     const t = setInterval(() => setTick(x => x + 1), 1000);
     return () => clearInterval(t);
@@ -55,8 +40,8 @@ export function ActiveUsers() {
       <div className="flex justify-between items-center mb-5">
         <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
           <span className="relative flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
           </span>
           지금 공부 중
           <span className="text-sm font-normal text-gray-400">({users.length}명)</span>
@@ -77,7 +62,7 @@ export function ActiveUsers() {
         {users.map((u, idx) => (
           <div key={idx} className="flex items-center justify-between p-3 bg-green-50 border border-green-100 rounded-2xl">
             <div className="flex items-center gap-2">
-              <span className="text-lg">{getEmoji(u.subject)}</span>
+              <span className="text-lg">{u.emoji || '📚'}</span>
               <div>
                 <p className="font-semibold text-gray-800 text-sm">{u.nickname}</p>
                 <p className="text-xs text-green-600 font-medium">{u.subject}</p>
