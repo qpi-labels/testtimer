@@ -87,7 +87,7 @@ export function Settings({ user, token, onUpdate }: SettingsProps) {
             <span className="text-xs text-gray-400 font-medium w-28 flex-shrink-0">Enhanced with</span>
             <div className="flex items-center gap-2">
               <img
-                src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Claude_AI_logo.svg/512px-Claude_AI_logo.svg.png"
+                src="https://raw.githubusercontent.com/lobehub/lobe-icons/refs/heads/master/packages/static-png/dark/claude-color.png"
                 alt="Claude"
                 className="h-4 w-4 object-contain"
               />
