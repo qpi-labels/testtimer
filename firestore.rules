@@ -1,0 +1,86 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+    function isValidNickname(nickname) {
+      return nickname is string && nickname.size() > 0 && nickname.size() < 50;
+    }
+    function isValidTotalTime(time) {
+      return time is number && time >= 0;
+    }
+    function isValidSubjectName(name) {
+      return name is string && name.size() > 0 && name.size() < 100;
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+    function isValidUser(data) {
+      return hasRequiredFields(['uid', 'nickname', 'totalTime']) &&
+             data.uid == request.auth.uid &&
+             isValidNickname(data.nickname) &&
+             isValidTotalTime(data.totalTime) &&
+             (data.isStudying is bool || !('isStudying' in data)) &&
+             (data.currentSubjectId is string || !('currentSubjectId' in data)) &&
+             (data.lastActive is number || !('lastActive' in data));
+    }
+
+    function isValidSubject(data) {
+      return hasRequiredFields(['name', 'totalTime']) &&
+             isValidSubjectName(data.name) &&
+             isValidTotalTime(data.totalTime);
+    }
+
+    function isValidStudyLog(data) {
+      return hasRequiredFields(['subjectId', 'startTime', 'endTime', 'duration']) &&
+             data.subjectId is string &&
+             data.startTime is number &&
+             data.endTime is number &&
+             data.duration is number &&
+             data.duration >= 0 &&
+             data.duration <= 7 * 60 * 60 * 1000; // Max 7 hours
+    }
+
+    // ===============================================================
+    // Match Rules
+    // ===============================================================
+    match /users/{userId} {
+      // Anyone authenticated can read user profiles (for leaderboard and currently studying)
+      allow read: if isAuthenticated();
+      
+      // Only owner can create/update their profile
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data);
+
+      match /subjects/{subjectId} {
+        // Only owner can read/write their subjects
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidSubject(request.resource.data);
+        allow update: if isOwner(userId) && isValidSubject(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+
+      match /studyLogs/{logId} {
+        // Only owner can read/write their logs
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidStudyLog(request.resource.data);
+        allow update: if isOwner(userId) && isValidStudyLog(request.resource.data);
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}

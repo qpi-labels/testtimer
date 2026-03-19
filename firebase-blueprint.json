@@ -1,0 +1,55 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and study status",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "nickname": { "type": "string" },
+        "totalTime": { "type": "number" },
+        "isStudying": { "type": "boolean" },
+        "currentSubjectId": { "type": "string" },
+        "lastActive": { "type": "number" }
+      },
+      "required": ["uid", "nickname", "totalTime"]
+    },
+    "Subject": {
+      "title": "Subject",
+      "description": "A study subject for a user",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "totalTime": { "type": "number" }
+      },
+      "required": ["name", "totalTime"]
+    },
+    "StudyLog": {
+      "title": "StudyLog",
+      "description": "A single study session log",
+      "type": "object",
+      "properties": {
+        "subjectId": { "type": "string" },
+        "subjectName": { "type": "string" },
+        "startTime": { "type": "number" },
+        "endTime": { "type": "number" },
+        "duration": { "type": "number" }
+      },
+      "required": ["subjectId", "startTime", "endTime", "duration"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile documents"
+    },
+    "/users/{userId}/subjects/{subjectId}": {
+      "schema": "Subject",
+      "description": "User's study subjects"
+    },
+    "/users/{userId}/studyLogs/{logId}": {
+      "schema": "StudyLog",
+      "description": "User's study session logs"
+    }
+  }
+}
