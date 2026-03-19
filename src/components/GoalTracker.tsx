@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Target, Edit2, Check, X, TrendingUp } from 'lucide-react';
 
 interface GoalTrackerProps {
-  totalTime: number; // today's actual study time in ms (from timer logs)
-  subjectStats: Record<string, number>;
+  totalTime: number;        // 오늘 공부 시간 (KST DailyStats 기준)
+  subjectStats: Record<string, number>; // 오늘 과목별
+  totalCumulative?: number; // 전체 누적 (로컬 세션 포함 합산용)
 }
 
 const GOAL_KEY = 'studyGoal_v1';
@@ -29,16 +30,16 @@ function fmtH(ms: number) {
 
 const PRESET_HOURS = [2, 4, 6, 8, 10];
 
-export function GoalTracker({ totalTime, subjectStats }: GoalTrackerProps) {
+export function GoalTracker({ totalTime, subjectStats, totalCumulative = 0 }: GoalTrackerProps) {
   const [goalMs, setGoalMs] = useState(loadGoal);
   const [editing, setEditing] = useState(false);
   const [inputH, setInputH] = useState('');
   const [inputM, setInputM] = useState('');
 
-  // today's actual time = sum of subjectStats (which accumulates per session)
-  // We use totalTime prop directly as cumulative; for daily we need today's logs.
-  // Since backend doesn't separate daily, we use subjectStats sum as today's total.
-  const todayMs = Object.values(subjectStats).reduce((a, b) => a + b, 0);
+  // totalTime: 서버 KST 오늘 기준 / totalCumulative: 전체 누적
+  // 둘 다 합산하되 totalCumulative는 오늘 세션이 저장된 후엔 totalTime에 이미 포함됨
+  // → 안전하게 totalTime 사용 (App에서 로그 저장 후 fetch 갱신)
+  const todayMs = totalTime;
 
   const progress = Math.min((todayMs / goalMs) * 100, 100);
   const reached = todayMs >= goalMs;
