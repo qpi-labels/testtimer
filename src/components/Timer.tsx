@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Play, Square, Plus, X, BookOpen } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Play, Square, Plus, X } from 'lucide-react';
 import { api } from '../api';
 
 interface TimerProps {
@@ -7,30 +7,55 @@ interface TimerProps {
   onLogAdded: (totalTime: number, subjectStats: Record<string, number>) => void;
 }
 
-const DEFAULT_SUBJECTS = ['국어', '수학', '영어', '탐구', '기타'];
-const STORAGE_KEY_SUBJECTS = 'customSubjects';
+interface Subject {
+  emoji: string;
+  name: string;
+}
+
+const DEFAULT_SUBJECTS: Subject[] = [
+  { emoji: '📖', name: '국어' },
+  { emoji: '📐', name: '수학' },
+  { emoji: '✏️', name: '영어' },
+  { emoji: '🔬', name: '탐구' },
+  { emoji: '📝', name: '기타' },
+];
+const STORAGE_KEY = 'customSubjects_v2';
+
+function loadSubjects(): Subject[] {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return DEFAULT_SUBJECTS;
+    const parsed = JSON.parse(saved);
+    // 구버전 string[] 포맷 마이그레이션
+    if (parsed.length && typeof parsed[0] === 'string') {
+      return parsed.map((s: string) => ({ emoji: '📚', name: s }));
+    }
+    return parsed;
+  } catch { return DEFAULT_SUBJECTS; }
+}
+
+const EMOJI_SUGGESTIONS = ['📖','📐','✏️','🔬','📝','🎵','🏃','💻','🌍','🎨','📊','🧮','💡','🏆','⚗️'];
 
 export function Timer({ token, onLogAdded }: TimerProps) {
-  const [subjects, setSubjects] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_SUBJECTS);
-      return saved ? JSON.parse(saved) : DEFAULT_SUBJECTS;
-    } catch { return DEFAULT_SUBJECTS; }
-  });
-  const [subject, setSubject] = useState(subjects[0] || '기타');
-  const [isRunning, setIsRunning] = useState(false);
-  const [startTime, setStartTime] = useState<number | null>(null);
-  const [elapsedMs, setElapsedMs] = useState(0);
-  const [isSaving, setIsSaving] = useState(false);
-  const [newSubject, setNewSubject] = useState('');
-  const [showAddSubject, setShowAddSubject] = useState(false);
+  const [subjects, setSubjects]     = useState<Subject[]>(loadSubjects);
+  const [subject, setSubject]       = useState<Subject>(subjects[0] || DEFAULT_SUBJECTS[0]);
+  const [isRunning, setIsRunning]   = useState(false);
+  const [startTime, setStartTime]   = useState<number | null>(null);
+  const [elapsedMs, setElapsedMs]   = useState(0);
+  const [isSaving, setIsSaving]     = useState(false);
+  const [showAdd, setShowAdd]       = useState(false);
+  const [newEmoji, setNewEmoji]     = useState('📚');
+  const [newName, setNewName]       = useState('');
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
+  // Restore timer state
   useEffect(() => {
-    const savedState = localStorage.getItem('timerState');
-    if (savedState) {
-      const { isRunning, startTime, subject } = JSON.parse(savedState);
+    const saved = localStorage.getItem('timerState');
+    if (saved) {
+      const { isRunning, startTime, subjectName } = JSON.parse(saved);
       if (isRunning && startTime) {
-        setSubject(subject);
+        const found = subjects.find(s => s.name === subjectName);
+        if (found) setSubject(found);
         setStartTime(startTime);
         setIsRunning(true);
         setElapsedMs(Date.now() - startTime);
@@ -41,26 +66,24 @@ export function Timer({ token, onLogAdded }: TimerProps) {
   useEffect(() => {
     let interval: number;
     if (isRunning && startTime) {
-      interval = window.setInterval(() => {
-        setElapsedMs(Date.now() - startTime);
-      }, 1000);
+      interval = window.setInterval(() => setElapsedMs(Date.now() - startTime), 1000);
     }
     return () => clearInterval(interval);
   }, [isRunning, startTime]);
 
   useEffect(() => {
-    localStorage.setItem('timerState', JSON.stringify({ isRunning, startTime, subject }));
+    localStorage.setItem('timerState', JSON.stringify({ isRunning, startTime, subjectName: subject.name }));
   }, [isRunning, startTime, subject]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY_SUBJECTS, JSON.stringify(subjects));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(subjects));
   }, [subjects]);
 
   const handleStart = async () => {
     const now = Date.now();
     setStartTime(now);
     setIsRunning(true);
-    try { await api.setActive(token, subject, now); } catch {}
+    try { await api.setActive(token, subject.name, subject.emoji, now); } catch {}
   };
 
   const handleStop = async () => {
@@ -73,20 +96,14 @@ export function Timer({ token, onLogAdded }: TimerProps) {
     setElapsedMs(0);
     localStorage.removeItem('timerState');
 
-    try { await api.setActive(token, subject, null); } catch {}
+    try { await api.setActive(token, subject.name, subject.emoji, null); } catch {}
 
-    if (durationMs < 60000) {
-      alert('1분 미만의 기록은 저장되지 않습니다.');
-      return;
-    }
-    if (durationMs > 7 * 60 * 60 * 1000) {
-      alert('부정행위 방지: 7시간을 초과하는 기록은 저장되지 않습니다.');
-      return;
-    }
+    if (durationMs < 60000) { alert('1분 미만의 기록은 저장되지 않습니다.'); return; }
+    if (durationMs > 7 * 60 * 60 * 1000) { alert('부정행위 방지: 7시간을 초과하는 기록은 저장되지 않습니다.'); return; }
 
     try {
       setIsSaving(true);
-      const result = await api.addLog(token, subject, startTime, endTime);
+      const result = await api.addLog(token, subject.name, startTime, endTime);
       onLogAdded(result.totalTime, result.subjectStats);
       alert('기록이 저장되었습니다!');
     } catch (err: any) {
@@ -96,29 +113,34 @@ export function Timer({ token, onLogAdded }: TimerProps) {
     }
   };
 
+  const openAdd = () => {
+    setNewEmoji('📚');
+    setNewName('');
+    setShowAdd(true);
+    setTimeout(() => nameInputRef.current?.focus(), 50);
+  };
+
   const addSubject = () => {
-    const trimmed = newSubject.trim();
-    if (!trimmed) return;
-    if (subjects.includes(trimmed)) { alert('이미 있는 과목입니다.'); return; }
-    setSubjects(prev => [...prev, trimmed]);
-    setSubject(trimmed);
-    setNewSubject('');
-    setShowAddSubject(false);
+    const name = newName.trim();
+    if (!name) return;
+    if (subjects.some(s => s.name === name)) { alert('이미 있는 과목입니다.'); return; }
+    const ns: Subject = { emoji: newEmoji, name };
+    setSubjects(prev => [...prev, ns]);
+    setSubject(ns);
+    setShowAdd(false);
   };
 
-  const removeSubject = (s: string) => {
+  const removeSubject = (name: string) => {
     if (isRunning) return;
-    const next = subjects.filter(x => x !== s);
-    setSubjects(next.length ? next : DEFAULT_SUBJECTS);
-    if (subject === s) setSubject(next[0] || '기타');
+    const next = subjects.filter(s => s.name !== name);
+    const safe = next.length ? next : DEFAULT_SUBJECTS;
+    setSubjects(safe);
+    if (subject.name === name) setSubject(safe[0]);
   };
 
-  const formatTime = (ms: number) => {
-    const totalSeconds = Math.floor(ms / 1000);
-    const h = Math.floor(totalSeconds / 3600);
-    const m = Math.floor((totalSeconds % 3600) / 60);
-    const s = totalSeconds % 60;
-    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  const fmt = (ms: number) => {
+    const s = Math.floor(ms / 1000);
+    return `${String(Math.floor(s / 3600)).padStart(2,'0')}:${String(Math.floor((s % 3600) / 60)).padStart(2,'0')}:${String(s % 60).padStart(2,'0')}`;
   };
 
   return (
@@ -127,19 +149,22 @@ export function Timer({ token, onLogAdded }: TimerProps) {
 
       {/* Subject chips */}
       <div className="w-full mb-6">
-        <div className="flex flex-wrap gap-2 mb-2">
+        <div className="flex flex-wrap gap-2 mb-3">
           {subjects.map(s => (
-            <div key={s} className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium transition-all cursor-pointer select-none
-              ${subject === s
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              } ${isRunning && subject !== s ? 'opacity-40 cursor-not-allowed' : ''}`}
+            <div
+              key={s.name}
               onClick={() => !isRunning && setSubject(s)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all cursor-pointer select-none
+                ${subject.name === s.name
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                } ${isRunning && subject.name !== s.name ? 'opacity-40 cursor-not-allowed' : ''}`}
             >
-              {s}
+              <span>{s.emoji}</span>
+              <span>{s.name}</span>
               {!isRunning && (
                 <button
-                  onClick={e => { e.stopPropagation(); removeSubject(s); }}
+                  onClick={e => { e.stopPropagation(); removeSubject(s.name); }}
                   className="ml-0.5 rounded-full hover:bg-white/30 p-0.5"
                 >
                   <X size={11} />
@@ -148,37 +173,101 @@ export function Timer({ token, onLogAdded }: TimerProps) {
             </div>
           ))}
 
-          {!isRunning && (
-            showAddSubject ? (
-              <div className="flex items-center gap-1">
-                <input
-                  autoFocus
-                  value={newSubject}
-                  onChange={e => setNewSubject(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') addSubject(); if (e.key === 'Escape') setShowAddSubject(false); }}
-                  className="w-24 px-2 py-1 text-sm border border-indigo-300 rounded-full outline-none focus:ring-2 focus:ring-indigo-400"
-                  placeholder="과목명"
-                />
-                <button onClick={addSubject} className="px-2 py-1 text-xs bg-indigo-600 text-white rounded-full">추가</button>
-                <button onClick={() => setShowAddSubject(false)} className="px-2 py-1 text-xs bg-gray-200 text-gray-600 rounded-full">취소</button>
-              </div>
-            ) : (
-              <button
-                onClick={() => setShowAddSubject(true)}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium bg-dashed border-2 border-dashed border-gray-300 text-gray-400 hover:border-indigo-400 hover:text-indigo-500 transition-colors"
-              >
-                <Plus size={13} /> 추가
-              </button>
-            )
+          {!isRunning && !showAdd && (
+            <button
+              onClick={openAdd}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium border-2 border-dashed border-gray-300 text-gray-400 hover:border-indigo-400 hover:text-indigo-500 transition-colors"
+            >
+              <Plus size={13} /> 추가
+            </button>
           )}
         </div>
-        <p className="text-xs text-gray-400">선택된 과목: <span className="font-semibold text-indigo-600">{subject}</span></p>
+
+        {/* Inline add form */}
+        {showAdd && !isRunning && (
+          <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 mb-2 space-y-3">
+            {/* Emoji suggestions */}
+            <div>
+              <p className="text-xs text-gray-400 mb-2 font-medium">이모지 선택</p>
+              <div className="flex flex-wrap gap-1.5">
+                {EMOJI_SUGGESTIONS.map(e => (
+                  <button
+                    key={e}
+                    onClick={() => setNewEmoji(e)}
+                    className={`w-8 h-8 rounded-xl text-base flex items-center justify-center transition-all ${
+                      newEmoji === e
+                        ? 'bg-indigo-100 ring-2 ring-indigo-400 scale-110'
+                        : 'bg-white hover:bg-gray-100 border border-gray-200'
+                    }`}
+                  >
+                    {e}
+                  </button>
+                ))}
+                {/* Custom emoji input */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={newEmoji}
+                    onChange={e => {
+                      // take last character (emoji)
+                      const val = [...e.target.value].slice(-1).join('');
+                      if (val) setNewEmoji(val);
+                    }}
+                    className="w-8 h-8 rounded-xl text-center text-base border-2 border-dashed border-gray-300 hover:border-indigo-400 focus:border-indigo-400 focus:outline-none bg-white"
+                    title="직접 입력"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Name input */}
+            <div>
+              <p className="text-xs text-gray-400 mb-1.5 font-medium">과목 이름</p>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-white border border-gray-200 rounded-xl focus-within:ring-2 focus-within:ring-indigo-400 focus-within:border-transparent transition-all">
+                  <span className="text-base flex-shrink-0">{newEmoji}</span>
+                  <input
+                    ref={nameInputRef}
+                    type="text"
+                    value={newName}
+                    onChange={e => setNewName(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') addSubject();
+                      if (e.key === 'Escape') setShowAdd(false);
+                    }}
+                    placeholder="과목명 입력"
+                    className="flex-1 text-sm text-gray-700 outline-none bg-transparent"
+                  />
+                </div>
+                <button
+                  onClick={addSubject}
+                  disabled={!newName.trim()}
+                  className="px-3 py-2 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 disabled:opacity-40 transition-colors"
+                >
+                  추가
+                </button>
+                <button
+                  onClick={() => setShowAdd(false)}
+                  className="px-3 py-2 bg-gray-200 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-300 transition-colors"
+                >
+                  취소
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <p className="text-xs text-gray-400">
+          선택된 과목: <span className="font-semibold text-indigo-600">{subject.emoji} {subject.name}</span>
+        </p>
       </div>
 
+      {/* Timer display */}
       <div className={`text-6xl font-mono font-bold mb-10 tracking-tight transition-colors ${isRunning ? 'text-indigo-600' : 'text-gray-300'}`}>
-        {formatTime(elapsedMs)}
+        {fmt(elapsedMs)}
       </div>
 
+      {/* Controls */}
       <div className="flex space-x-4">
         {!isRunning ? (
           <button
@@ -197,6 +286,7 @@ export function Timer({ token, onLogAdded }: TimerProps) {
           </button>
         )}
       </div>
+
       {isSaving && <p className="mt-4 text-sm text-gray-500 animate-pulse">저장 중...</p>}
     </div>
   );
