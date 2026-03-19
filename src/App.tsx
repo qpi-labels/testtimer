@@ -8,20 +8,30 @@ import { SubjectStats } from './components/SubjectStats';
 import { ActiveUsers } from './components/ActiveUsers';
 import { DailyPlanner } from './components/DailyPlanner';
 import { GoalTracker } from './components/GoalTracker';
-import { LogOut, Timer as TimerIcon, ClipboardList, Settings as SettingsIcon } from 'lucide-react';
+import { Statistics } from './components/Statistics';
+import {
+  LogOut,
+  Timer as TimerIcon,
+  ClipboardList,
+  BarChart2,
+  Settings as SettingsIcon,
+} from 'lucide-react';
 
-type Tab = 'timer' | 'planner' | 'settings';
+type Tab = 'timer' | 'planner' | 'stats' | 'settings';
 
 const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
-  { key: 'timer',    label: '타이머',  icon: <TimerIcon size={16} /> },
-  { key: 'planner',  label: '플래너',  icon: <ClipboardList size={16} /> },
-  { key: 'settings', label: '설정',    icon: <SettingsIcon size={16} /> },
+  { key: 'timer',    label: '타이머',  icon: <TimerIcon size={15} /> },
+  { key: 'planner',  label: '플래너',  icon: <ClipboardList size={15} /> },
+  { key: 'stats',    label: '통계',    icon: <BarChart2 size={15} /> },
+  { key: 'settings', label: '설정',    icon: <SettingsIcon size={15} /> },
 ];
 
+/* ── Desktop animated tab pill ── */
 function TabNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const btnRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [pill, setPill] = useState({ left: 0, width: 0 });
+  const initialized = useRef(false);
 
   useEffect(() => {
     const idx = TABS.findIndex(t => t.key === tab);
@@ -30,17 +40,26 @@ function TabNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
     if (!btn || !cont) return;
     const br = btn.getBoundingClientRect();
     const cr = cont.getBoundingClientRect();
-    setPill({ left: br.left - cr.left, width: br.width });
+    const next = { left: br.left - cr.left, width: br.width };
+    if (!initialized.current) {
+      // first render: set without transition
+      setPill(next);
+      initialized.current = true;
+    } else {
+      setPill(next);
+    }
   }, [tab]);
 
   return (
-    <div ref={containerRef} className="relative hidden sm:flex items-center gap-1 bg-gray-100 p-1 rounded-2xl">
+    <div ref={containerRef} className="relative hidden sm:flex items-center gap-0.5 bg-gray-100 p-1 rounded-2xl">
       <span
         className="absolute top-1 bottom-1 bg-white rounded-xl shadow-sm pointer-events-none"
         style={{
           left: pill.left,
           width: pill.width,
-          transition: 'left 0.32s cubic-bezier(0.4,0,0.2,1), width 0.32s cubic-bezier(0.4,0,0.2,1)',
+          transition: initialized.current
+            ? 'left 0.3s cubic-bezier(0.4,0,0.2,1), width 0.3s cubic-bezier(0.4,0,0.2,1)'
+            : 'none',
         }}
       />
       {TABS.map((t, i) => (
@@ -48,7 +67,7 @@ function TabNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
           key={t.key}
           ref={el => { btnRefs.current[i] = el; }}
           onClick={() => setTab(t.key)}
-          className={`relative z-10 flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors duration-200 select-none ${
+          className={`relative z-10 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium transition-colors duration-200 select-none ${
             tab === t.key ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-800'
           }`}
         >
@@ -59,10 +78,12 @@ function TabNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
   );
 }
 
+/* ── Mobile bottom tab bar with sliding indicator ── */
 function MobileTabBar({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const btnRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [line, setLine] = useState({ left: 0, width: 0 });
+  const initialized = useRef(false);
 
   useEffect(() => {
     const idx = TABS.findIndex(t => t.key === tab);
@@ -72,6 +93,7 @@ function MobileTabBar({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
     const br = btn.getBoundingClientRect();
     const cr = cont.getBoundingClientRect();
     setLine({ left: br.left - cr.left + br.width * 0.2, width: br.width * 0.6 });
+    initialized.current = true;
   }, [tab]);
 
   return (
@@ -81,7 +103,9 @@ function MobileTabBar({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
         style={{
           left: line.left,
           width: line.width,
-          transition: 'left 0.32s cubic-bezier(0.4,0,0.2,1), width 0.32s cubic-bezier(0.4,0,0.2,1)',
+          transition: initialized.current
+            ? 'left 0.3s cubic-bezier(0.4,0,0.2,1), width 0.3s cubic-bezier(0.4,0,0.2,1)'
+            : 'none',
         }}
       />
       {TABS.map((t, i) => (
@@ -89,7 +113,7 @@ function MobileTabBar({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
           key={t.key}
           ref={el => { btnRefs.current[i] = el; }}
           onClick={() => setTab(t.key)}
-          className={`flex-1 flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors duration-200 ${
+          className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium transition-colors duration-200 ${
             tab === t.key ? 'text-indigo-600' : 'text-gray-400'
           }`}
         >
@@ -153,7 +177,7 @@ export default function App() {
       <div className="w-full max-w-md bg-white p-8 rounded-3xl shadow-sm border border-gray-100 text-center">
         <h2 className="text-2xl font-bold text-gray-800 mb-2">환영합니다!</h2>
         <p className="text-gray-500 mb-6">사용하실 닉네임을 설정해주세요.</p>
-        <Settings user={user} token={token} onUpdate={(n) => setUser({ ...user, nickname: n })} />
+        <Settings user={user} token={token} onUpdate={n => setUser({ ...user, nickname: n })} />
       </div>
     </div>
   );
@@ -161,12 +185,12 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
 
-      {/* Header */}
+      {/* ── Header ── */}
       <header className="bg-white border-b border-gray-100 sticky top-0 z-20">
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-indigo-600 tracking-tight">StudyTimer</h1>
+        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
+          <h1 className="text-xl font-bold text-indigo-600 tracking-tight flex-shrink-0">StudyTimer</h1>
           <TabNav tab={tab} setTab={setTab} />
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-shrink-0">
             <span className="text-sm font-medium text-gray-600 hidden sm:block">{user.nickname}</span>
             <button onClick={handleLogout} className="p-2 text-gray-400 hover:text-red-500 transition-colors rounded-full hover:bg-red-50">
               <LogOut size={19} />
@@ -177,17 +201,12 @@ export default function App() {
 
       <main className="max-w-6xl mx-auto px-4 py-8 pb-24 sm:pb-8">
 
-        {/* ── TIMER TAB ─────────────────────────────── */}
+        {/* ── TIMER TAB ── */}
         {tab === 'timer' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-            {/* Left 8-col: timer (full width) + stats row below */}
             <div className="lg:col-span-8 space-y-6">
-
-              {/* Timer card — full 8-col width */}
               <Timer token={token} onLogAdded={handleLogAdded} />
 
-              {/* Stats row: total banner + goal tracker */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="bg-indigo-50 rounded-3xl p-6 border border-indigo-100 flex items-center justify-between">
                   <div>
@@ -201,14 +220,12 @@ export default function App() {
                     <TrophyIcon size={28} />
                   </div>
                 </div>
-
                 <GoalTracker totalTime={user.totalTime} subjectStats={user.subjectStats || {}} />
               </div>
 
               <SubjectStats subjectStats={user.subjectStats || {}} totalTime={user.totalTime} />
             </div>
 
-            {/* Right 4-col */}
             <div className="lg:col-span-4 space-y-6">
               <ActiveUsers />
               <Leaderboard />
@@ -216,17 +233,27 @@ export default function App() {
           </div>
         )}
 
-        {/* ── PLANNER TAB ───────────────────────────── */}
+        {/* ── PLANNER TAB ── */}
         {tab === 'planner' && (
           <div className="max-w-2xl mx-auto">
             <DailyPlanner />
           </div>
         )}
 
-        {/* ── SETTINGS TAB ──────────────────────────── */}
+        {/* ── STATS TAB ── */}
+        {tab === 'stats' && (
+          <div className="max-w-3xl mx-auto">
+            <Statistics
+              subjectStats={user.subjectStats || {}}
+              totalTime={user.totalTime}
+            />
+          </div>
+        )}
+
+        {/* ── SETTINGS TAB ── */}
         {tab === 'settings' && (
           <div className="max-w-lg mx-auto">
-            <Settings user={user} token={token} onUpdate={(n) => setUser({ ...user, nickname: n })} />
+            <Settings user={user} token={token} onUpdate={n => setUser({ ...user, nickname: n })} />
           </div>
         )}
       </main>
