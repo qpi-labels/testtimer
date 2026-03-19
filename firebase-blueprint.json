@@ -1,0 +1,42 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "사용자 프로필 및 공부 통계",
+      "type": "object",
+      "properties": {
+        "nickname": { "type": "string", "description": "사용자 닉네임" },
+        "totalTime": { "type": "number", "description": "총 누적 공부 시간 (ms)" },
+        "subjects": { "type": "array", "items": { "type": "string" }, "description": "공부 과목 목록" },
+        "subjectTimes": { "type": "object", "description": "과목별 누적 공부 시간 (ms)" },
+        "isStudying": { "type": "boolean", "description": "현재 공부 중 여부" },
+        "currentSubject": { "type": "string", "description": "현재 공부 중인 과목" },
+        "lastActive": { "type": "string", "format": "date-time", "description": "마지막 활동 시간" }
+      },
+      "required": ["nickname", "totalTime", "subjects"]
+    },
+    "StudyLog": {
+      "title": "StudyLog",
+      "description": "공부 기록",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "사용자 ID" },
+        "subject": { "type": "string", "description": "공부한 과목" },
+        "durationMs": { "type": "number", "description": "공부 시간 (ms)" },
+        "startTime": { "type": "string", "format": "date-time", "description": "시작 시간" },
+        "endTime": { "type": "string", "format": "date-time", "description": "종료 시간" }
+      },
+      "required": ["uid", "subject", "durationMs", "startTime", "endTime"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "User",
+      "description": "사용자 데이터"
+    },
+    "/logs/{logId}": {
+      "schema": "StudyLog",
+      "description": "공부 로그"
+    }
+  }
+}

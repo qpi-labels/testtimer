@@ -1,0 +1,91 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {uid}
+    // Fields:
+    //   - nickname: string (required, 1-20 chars)
+    //   - totalTime: number (required, >= 0)
+    //   - subjects: list (required, strings, max 20 items)
+    //   - subjectTimes: map (optional, string keys, number values)
+    //   - isStudying: bool (optional)
+    //   - currentSubject: string (optional)
+    //   - lastActive: timestamp (optional)
+    //
+    // Collection: logs
+    // Document ID: {logId}
+    // Fields:
+    //   - uid: string (required, matches auth.uid)
+    //   - subject: string (required)
+    //   - durationMs: number (required, > 0)
+    //   - startTime: timestamp (required)
+    //   - endTime: timestamp (required)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isValidUser(data) {
+      return data.keys().hasAll(['nickname', 'totalTime', 'subjects']) &&
+             data.nickname is string && data.nickname.size() >= 1 && data.nickname.size() <= 20 &&
+             data.totalTime is number && data.totalTime >= 0 &&
+             data.subjects is list && data.subjects.size() <= 20 &&
+             (!('isStudying' in data) || data.isStudying is bool) &&
+             (!('currentSubject' in data) || data.currentSubject is string) &&
+             (!('lastActive' in data) || data.lastActive is timestamp) &&
+             (!('subjectTimes' in data) || data.subjectTimes is map);
+    }
+
+    function isValidLog(data) {
+      return data.keys().hasAll(['uid', 'subject', 'durationMs', 'startTime', 'endTime']) &&
+             data.uid == request.auth.uid &&
+             data.subject is string &&
+             data.durationMs is number && data.durationMs > 0 &&
+             data.startTime is timestamp &&
+             data.endTime is timestamp;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      // Allow reading user profiles for leaderboard and active users
+      allow read: if isAuthenticated();
+      
+      // Allow creating own profile
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      
+      // Allow updating own profile
+      allow update: if isOwner(userId) && isValidUser(request.resource.data);
+    }
+
+    match /logs/{logId} {
+      // Only owner can read their own logs
+      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      
+      // Only owner can create logs
+      allow create: if isAuthenticated() && isValidLog(request.resource.data);
+      
+      // Logs are immutable
+      allow update, delete: if false;
+    }
+    
+    match /test/connection {
+      allow read: if true;
+    }
+  }
+}

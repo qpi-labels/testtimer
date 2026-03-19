@@ -1,32 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Square, Save } from 'lucide-react';
-import { api } from '../api';
+import { Play, Square } from 'lucide-react';
+import { api, User } from '../api';
 
 interface TimerProps {
-  token: string;
-  onLogAdded: (totalTime: number) => void;
+  user: User;
 }
 
-export function Timer({ token, onLogAdded }: TimerProps) {
-  const [subject, setSubject] = useState('수학');
+export function Timer({ user }: TimerProps) {
+  const [subject, setSubject] = useState(user.subjects[0] || '기타');
   const [isRunning, setIsRunning] = useState(false);
   const [startTime, setStartTime] = useState<number | null>(null);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Sync subject if current list doesn't include it
+  useEffect(() => {
+    if (!user.subjects.includes(subject)) {
+      setSubject(user.subjects[0] || '기타');
+    }
+  }, [user.subjects]);
+
   // Load state from localStorage on mount (Recovery)
   useEffect(() => {
     const savedState = localStorage.getItem('timerState');
     if (savedState) {
-      const { isRunning, startTime, subject } = JSON.parse(savedState);
-      if (isRunning && startTime) {
-        setSubject(subject);
-        setStartTime(startTime);
+      const { isRunning: wasRunning, startTime: wasStartTime, subject: wasSubject, uid: wasUid } = JSON.parse(savedState);
+      // Only recover if it's the same user
+      if (wasUid === user.uid && wasRunning && wasStartTime) {
+        setSubject(wasSubject);
+        setStartTime(wasStartTime);
         setIsRunning(true);
-        setElapsedMs(Date.now() - startTime);
+        setElapsedMs(Date.now() - wasStartTime);
       }
     }
-  }, []);
+  }, [user.uid]);
 
   // Timer interval
   useEffect(() => {
@@ -41,18 +48,23 @@ export function Timer({ token, onLogAdded }: TimerProps) {
 
   // Save state to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem('timerState', JSON.stringify({ isRunning, startTime, subject }));
-  }, [isRunning, startTime, subject]);
+    if (isRunning) {
+      localStorage.setItem('timerState', JSON.stringify({ isRunning, startTime, subject, uid: user.uid }));
+    } else {
+      localStorage.removeItem('timerState');
+    }
+  }, [isRunning, startTime, subject, user.uid]);
 
-  const handleStart = () => {
-    setStartTime(Date.now());
+  const handleStart = async () => {
+    const now = Date.now();
+    setStartTime(now);
     setIsRunning(true);
+    await api.startStudy(user.uid, subject);
   };
 
   const handleStop = async () => {
     if (!startTime) return;
-    const endTime = Date.now();
-    const durationMs = endTime - startTime;
+    const durationMs = elapsedMs;
     
     setIsRunning(false);
     setStartTime(null);
@@ -60,19 +72,14 @@ export function Timer({ token, onLogAdded }: TimerProps) {
     localStorage.removeItem('timerState');
 
     if (durationMs < 60000) {
+      await api.stopStudy(user.uid, subject, 0); // Just stop without adding time
       alert('1분 미만의 기록은 저장되지 않습니다.');
-      return;
-    }
-
-    if (durationMs > 7 * 60 * 60 * 1000) {
-      alert('부정행위 방지: 7시간을 초과하는 기록은 저장되지 않습니다.');
       return;
     }
 
     try {
       setIsSaving(true);
-      const newTotal = await api.addLog(token, subject, startTime, endTime);
-      onLogAdded(newTotal);
+      await api.stopStudy(user.uid, subject, durationMs);
       alert('기록이 저장되었습니다!');
     } catch (err: any) {
       alert('저장 실패: ' + err.message);
@@ -91,22 +98,23 @@ export function Timer({ token, onLogAdded }: TimerProps) {
 
   return (
     <div className="flex flex-col items-center p-6 bg-white rounded-3xl shadow-sm border border-gray-100">
-      <h2 className="text-xl font-bold text-gray-800 mb-6">타이머</h2>
+      <h2 className="text-xl font-bold text-gray-800 mb-6">공부 타이머</h2>
       
-      <select 
-        value={subject} 
-        onChange={(e) => setSubject(e.target.value)}
-        disabled={isRunning}
-        className="mb-8 px-4 py-2 border border-gray-200 rounded-xl bg-gray-50 text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
-      >
-        <option value="국어">국어</option>
-        <option value="수학">수학</option>
-        <option value="영어">영어</option>
-        <option value="탐구">탐구</option>
-        <option value="기타">기타</option>
-      </select>
+      <div className="w-full max-w-xs mb-8">
+        <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">과목 선택</label>
+        <select 
+          value={subject} 
+          onChange={(e) => setSubject(e.target.value)}
+          disabled={isRunning}
+          className="w-full px-4 py-3 border border-gray-200 rounded-2xl bg-gray-50 text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 appearance-none cursor-pointer"
+        >
+          {user.subjects.map((s) => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
+      </div>
 
-      <div className="text-6xl font-mono font-bold text-indigo-600 mb-10 tracking-tight">
+      <div className="text-7xl font-mono font-bold text-indigo-600 mb-10 tracking-tighter tabular-nums">
         {formatTime(elapsedMs)}
       </div>
 
@@ -115,20 +123,26 @@ export function Timer({ token, onLogAdded }: TimerProps) {
           <button 
             onClick={handleStart}
             disabled={isSaving}
-            className="flex items-center justify-center w-20 h-20 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-transform active:scale-95 shadow-md"
+            className="flex items-center justify-center w-24 h-24 bg-indigo-600 text-white rounded-full hover:bg-indigo-700 transition-all active:scale-95 shadow-lg shadow-indigo-200"
           >
-            <Play size={32} className="ml-2" />
+            <Play size={40} className="ml-2" />
           </button>
         ) : (
           <button 
             onClick={handleStop}
-            className="flex items-center justify-center w-20 h-20 bg-red-500 text-white rounded-full hover:bg-red-600 transition-transform active:scale-95 shadow-md"
+            className="flex items-center justify-center w-24 h-24 bg-red-500 text-white rounded-full hover:bg-red-600 transition-all active:scale-95 shadow-lg shadow-red-200"
           >
-            <Square size={28} />
+            <Square size={36} />
           </button>
         )}
       </div>
       {isSaving && <p className="mt-4 text-sm text-gray-500 animate-pulse">저장 중...</p>}
+      {isRunning && (
+        <p className="mt-6 text-indigo-600 font-bold flex items-center">
+          <span className="w-2 h-2 bg-indigo-600 rounded-full animate-ping mr-2"></span>
+          {subject} 공부 중...
+        </p>
+      )}
     </div>
   );
 }

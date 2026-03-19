@@ -1,108 +1,171 @@
+import { auth, db, googleProvider, signInWithPopup, signOut, onAuthStateChanged, doc, getDoc, setDoc, updateDoc, collection, query, where, orderBy, limit, onSnapshot, getDocs, Timestamp, serverTimestamp, increment, addDoc, handleFirestoreError, OperationType, FirebaseUser } from './firebase';
+
 export interface User {
   uid: string;
-  email: string;
+  email: string | null;
   nickname: string;
   totalTime: number;
+  subjects: string[];
+  subjectTimes: Record<string, number>;
+  isStudying: boolean;
+  currentSubject?: string;
+  lastActive?: any;
 }
 
 export interface LeaderboardEntry {
+  uid: string;
   nickname: string;
   totalTime: number;
+  isStudying: boolean;
+  currentSubject?: string;
 }
 
-const GAS_URL = import.meta.env.VITE_GAS_URL;
-
-// Mock data for preview if GAS_URL is not set
-let mockUser: User | null = null;
-let mockLeaderboard: LeaderboardEntry[] = [
-  { nickname: 'StudyKing', totalTime: 120 * 60 * 60 * 1000 },
-  { nickname: 'FocusMaster', totalTime: 85 * 60 * 60 * 1000 },
-  { nickname: 'Newbie', totalTime: 5 * 60 * 60 * 1000 },
-];
-
 export const api = {
-  async login(token: string): Promise<User> {
-    if (!GAS_URL) {
-      console.log('Mock Login with token:', token);
-      mockUser = { uid: 'mock-uid', email: 'user@example.com', nickname: '', totalTime: 0 };
-      return mockUser;
+  async login(): Promise<User | null> {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const firebaseUser = result.user;
+      const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+      
+      if (!userDoc.exists()) {
+        const newUser: User = {
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          nickname: '',
+          totalTime: 0,
+          subjects: ['국어', '영어', '수학'],
+          subjectTimes: {},
+          isStudying: false,
+        };
+        await setDoc(doc(db, 'users', firebaseUser.uid), {
+          ...newUser,
+          lastActive: serverTimestamp(),
+        });
+        return newUser;
+      }
+      
+      return userDoc.data() as User;
+    } catch (error) {
+      handleFirestoreError(error, OperationType.GET, 'users');
+      return null;
     }
-    
-    const res = await fetch(GAS_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'text/plain;charset=utf-8',
-      },
-      body: JSON.stringify({ action: 'login', token }),
-    });
-    const data = await res.json();
-    if (!data.success) throw new Error(data.error);
-    return data.user;
   },
 
-  async setNickname(token: string, nickname: string): Promise<string> {
-    if (!GAS_URL) {
-      if (mockUser) mockUser.nickname = nickname;
+  async logout() {
+    await signOut(auth);
+  },
+
+  async setNickname(uid: string, nickname: string): Promise<string> {
+    try {
+      await updateDoc(doc(db, 'users', uid), {
+        nickname,
+        lastActive: serverTimestamp(),
+      });
+      return nickname;
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `users/${uid}`);
       return nickname;
     }
-
-    const res = await fetch(GAS_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'text/plain;charset=utf-8',
-      },
-      body: JSON.stringify({ action: 'setNickname', token, nickname }),
-    });
-    const data = await res.json();
-    if (!data.success) throw new Error(data.error);
-    return data.nickname;
   },
 
-  async addLog(token: string, subject: string, startTime: number, endTime: number): Promise<number> {
-    const durationMs = endTime - startTime;
-    if (durationMs > 7 * 60 * 60 * 1000) {
-      throw new Error('집중시간이 7시간을 초과하여 기록되지 않습니다. (부정행위 방지)');
-    }
-
-    if (!GAS_URL) {
-      if (mockUser) mockUser.totalTime += durationMs;
-      // Update mock leaderboard
-      const existing = mockLeaderboard.find(e => e.nickname === mockUser?.nickname);
-      if (existing) {
-        existing.totalTime += durationMs;
-      } else if (mockUser?.nickname) {
-        mockLeaderboard.push({ nickname: mockUser.nickname, totalTime: mockUser.totalTime });
+  async addSubject(uid: string, subject: string): Promise<string[]> {
+    try {
+      const userDoc = await getDoc(doc(db, 'users', uid));
+      const subjects = userDoc.data()?.subjects || [];
+      if (!subjects.includes(subject)) {
+        const newSubjects = [...subjects, subject];
+        await updateDoc(doc(db, 'users', uid), {
+          subjects: newSubjects,
+          lastActive: serverTimestamp(),
+        });
+        return newSubjects;
       }
-      mockLeaderboard.sort((a, b) => b.totalTime - a.totalTime);
-      return mockUser?.totalTime || 0;
+      return subjects;
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `users/${uid}`);
+      return [];
     }
-
-    const res = await fetch(GAS_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'text/plain;charset=utf-8',
-      },
-      body: JSON.stringify({ action: 'addLog', token, subject, startTime, endTime }),
-    });
-    const data = await res.json();
-    if (!data.success) throw new Error(data.error);
-    return data.totalTime;
   },
 
-  async getLeaderboard(): Promise<LeaderboardEntry[]> {
-    if (!GAS_URL) {
-      return [...mockLeaderboard];
+  async deleteSubject(uid: string, subject: string): Promise<string[]> {
+    try {
+      const userDoc = await getDoc(doc(db, 'users', uid));
+      const subjects = userDoc.data()?.subjects || [];
+      const newSubjects = subjects.filter((s: string) => s !== subject);
+      await updateDoc(doc(db, 'users', uid), {
+        subjects: newSubjects,
+        lastActive: serverTimestamp(),
+      });
+      return newSubjects;
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `users/${uid}`);
+      return [];
     }
+  },
 
-    const res = await fetch(GAS_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'text/plain;charset=utf-8',
-      },
-      body: JSON.stringify({ action: 'getLeaderboard' }),
+  async startStudy(uid: string, subject: string) {
+    try {
+      await updateDoc(doc(db, 'users', uid), {
+        isStudying: true,
+        currentSubject: subject,
+        lastActive: serverTimestamp(),
+      });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `users/${uid}`);
+    }
+  },
+
+  async stopStudy(uid: string, subject: string, durationMs: number) {
+    try {
+      const userRef = doc(db, 'users', uid);
+      await updateDoc(userRef, {
+        isStudying: false,
+        totalTime: increment(durationMs),
+        [`subjectTimes.${subject}`]: increment(durationMs),
+        lastActive: serverTimestamp(),
+      });
+
+      await addDoc(collection(db, 'logs'), {
+        uid,
+        subject,
+        durationMs,
+        startTime: Timestamp.fromMillis(Date.now() - durationMs),
+        endTime: serverTimestamp(),
+      });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, 'logs');
+    }
+  },
+
+  onLeaderboardUpdate(callback: (entries: LeaderboardEntry[]) => void) {
+    const q = query(collection(db, 'users'), orderBy('totalTime', 'desc'), limit(50));
+    return onSnapshot(q, (snapshot) => {
+      const entries = snapshot.docs.map(doc => ({
+        uid: doc.id,
+        nickname: doc.data().nickname,
+        totalTime: doc.data().totalTime,
+        isStudying: doc.data().isStudying,
+        currentSubject: doc.data().currentSubject,
+      }));
+      callback(entries);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'users');
     });
-    const data = await res.json();
-    if (!data.success) throw new Error(data.error);
-    return data.leaderboard;
+  },
+
+  onActiveUsersUpdate(callback: (entries: LeaderboardEntry[]) => void) {
+    const q = query(collection(db, 'users'), where('isStudying', '==', true), limit(50));
+    return onSnapshot(q, (snapshot) => {
+      const entries = snapshot.docs.map(doc => ({
+        uid: doc.id,
+        nickname: doc.data().nickname,
+        totalTime: doc.data().totalTime,
+        isStudying: doc.data().isStudying,
+        currentSubject: doc.data().currentSubject,
+      }));
+      callback(entries);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'users');
+    });
   }
 };
