@@ -361,9 +361,15 @@ setTimeout(() => {
 /* ----------------------------------------------------
 	2. 오디오 비주얼라이저 기능
 	---------------------------------------------------- */
-let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-let gainNode = audioCtx.createGain(); gainNode.connect(audioCtx.destination);
-gainNode.gain.value = 0.25;
+let audioCtx = null;
+let gainNode = null;
+try {
+	audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+	gainNode = audioCtx.createGain(); gainNode.connect(audioCtx.destination);
+	gainNode.gain.value = 0.25;
+} catch (e) {
+	console.warn("AudioContext init failed:", e);
+}
 const links = [
 	'./sound/crickets.mp3',
 	'./sound/creepy_tomb.mp3',
@@ -372,6 +378,7 @@ const links = [
 let buffers = [];
 for (let e of links) {
 	buffers.push(async () => {
+		if (!audioCtx) return null;
 		try { return audioCtx.decodeAudioData(await (await fetch(e)).arrayBuffer()); } catch { return null; }
 	});
 }
@@ -386,7 +393,7 @@ async function setAudio(newAudio) {
 		} catch {}
 	}
 	curAudio = newAudio;
-	if (newAudio === -1 || !buffers || !buffers[newAudio]) return;
+	if (newAudio === -1 || !buffers || !buffers[newAudio] || !audioCtx) return;
 	if (buffers[newAudio] instanceof Function) buffers[newAudio] = await buffers[newAudio]();
 	try {
 		const source = new AudioBufferSourceNode(audioCtx, {buffer: buffers[newAudio], loop: true});

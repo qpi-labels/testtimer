@@ -3,7 +3,7 @@ import "../style/timer.css";
 
 import { dateKey, endOfDay, ensureDay, startOfDay } from "./util.js";
 import { renderHUD, renderPanel, renderAll } from "./render.js";
-import { App, initAutoSync, testSpecificTimeSync } from "./data.js";
+import { App, initAutoSync } from "./data.js";
 
 // =========================
 // 5. YPT Local Study Timer (offline, localStorage only)
@@ -134,5 +134,3 @@ scheduleTick();
 
 // sync
 initAutoSync();
-//테스트 끝나면 주석 처리 잊지 않기
-testSpecificTimeSync(21, 0);

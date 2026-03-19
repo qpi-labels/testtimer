@@ -171,6 +171,11 @@ async function syncToFirestore() {
     const dayData = App.store.days[dk];
     if (!dayData || dayData.totalMs <= 0) return;
     
+    // 1분 미만, 7시간 이상 기록 제외
+    if (dayData.totalMs < 60000 || dayData.totalMs >= 7 * 60 * 60 * 1000) {
+        return;
+    }
+
     // Throttle sync to every 10 seconds
     const now = Date.now();
     if (now - lastSyncMs < 10000) return;
@@ -197,6 +202,12 @@ async function sendDataToSheet(targetDateTs) {
 	const dayData = App.store.days[key];
 	
 	if (!dayData || dayData.totalMs <= 0) return;
+
+	// 1분 미만, 7시간 이상 기록 제외
+	if (dayData.totalMs < 60000 || dayData.totalMs >= 7 * 60 * 60 * 1000) {
+		console.log(`${key} 데이터 전송 제외 (1분 미만 또는 7시간 이상): ${fmtHMS(dayData.totalMs)}`);
+		return;
+	}
 
     const userName = currentUser ? currentUser.displayName : (localStorage.getItem('ypt_user_name') || '익명');
 
