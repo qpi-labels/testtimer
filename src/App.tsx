@@ -129,11 +129,20 @@ export default function App() {
   const [user, setUser]       = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
   const [tab, setTab]         = useState<Tab>('timer');
+  const [todayStats, setTodayStats] = useState<{ totalTime: number; subjectStats: Record<string, number> }>({ totalTime: 0, subjectStats: {} });
+  const [timerElapsed, setTimerElapsed] = useState<{ ms: number; subject: string }>({ ms: 0, subject: '' });
 
   useEffect(() => {
     const t = localStorage.getItem('token');
     if (t && !user) handleLogin(t);
   }, []);
+
+  const fetchTodayStats = async (credential: string) => {
+    try {
+      const stats = await api.getDailyStats(credential);
+      setTodayStats(stats);
+    } catch {}
+  };
 
   const handleLogin = async (credential: string) => {
     setLoading(true);
@@ -142,6 +151,7 @@ export default function App() {
       setUser(userData);
       setToken(credential);
       localStorage.setItem('token', credential);
+      fetchTodayStats(credential);
     } catch {
       alert('로그인 실패. 다시 시도해주세요.');
       handleLogout();
@@ -158,6 +168,8 @@ export default function App() {
 
   const handleLogAdded = (totalTime: number, subjectStats: Record<string, number>) => {
     if (user) setUser({ ...user, totalTime, subjectStats });
+    // 오늘 통계 서버에서 다시 가져오기
+    if (token) fetchTodayStats(token);
   };
 
   if (loading) return (
@@ -205,22 +217,30 @@ export default function App() {
         {tab === 'timer' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-8 space-y-6">
-              <Timer token={token} nickname={user.nickname} grade={user.grade} onLogAdded={handleLogAdded} />
+              <Timer token={token} nickname={user.nickname} grade={user.grade} onLogAdded={handleLogAdded} onElapsedChange={(ms, subj) => setTimerElapsed({ ms, subject: subj })} />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="bg-indigo-50 rounded-3xl p-6 border border-indigo-100 flex items-center justify-between">
                   <div>
-                    <p className="text-indigo-800 font-medium mb-1">총 누적 공부 시간</p>
+                    <p className="text-indigo-800 font-medium mb-1">오늘 공부 시간</p>
                     <p className="text-3xl font-bold text-indigo-900">
-                      {Math.floor(user.totalTime / 3600000)}시간{' '}
-                      {Math.floor((user.totalTime % 3600000) / 60000)}분
+                      {Math.floor(todayStats.totalTime / 3600000)}시간{' '}
+                      {Math.floor((todayStats.totalTime % 3600000) / 60000)}분
                     </p>
+
                   </div>
                   <div className="w-14 h-14 bg-indigo-200 rounded-full flex items-center justify-center text-indigo-600">
                     <TrophyIcon size={28} />
                   </div>
                 </div>
-                <GoalTracker totalTime={user.totalTime} subjectStats={user.subjectStats || {}} />
+                {(() => {
+                  const liveTotal = todayStats.totalTime + timerElapsed.ms;
+                  const liveSubjects = { ...todayStats.subjectStats };
+                  if (timerElapsed.ms > 0 && timerElapsed.subject) {
+                    liveSubjects[timerElapsed.subject] = (liveSubjects[timerElapsed.subject] || 0) + timerElapsed.ms;
+                  }
+                  return <GoalTracker totalTime={liveTotal} subjectStats={liveSubjects} />;
+                })()}
               </div>
 
               <SubjectStats subjectStats={user.subjectStats || {}} totalTime={user.totalTime} />
