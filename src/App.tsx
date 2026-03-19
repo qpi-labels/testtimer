@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { api, User } from './api';
 import { Login } from './components/Login';
 import { Timer } from './components/Timer';
@@ -13,10 +13,92 @@ import { LogOut, Timer as TimerIcon, ClipboardList, Settings as SettingsIcon } f
 type Tab = 'timer' | 'planner' | 'settings';
 
 const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
-  { key: 'timer',    label: '타이머',  icon: <TimerIcon size={17} /> },
-  { key: 'planner',  label: '플래너',  icon: <ClipboardList size={17} /> },
-  { key: 'settings', label: '설정',    icon: <SettingsIcon size={17} /> },
+  { key: 'timer',    label: '타이머',  icon: <TimerIcon size={16} /> },
+  { key: 'planner',  label: '플래너',  icon: <ClipboardList size={16} /> },
+  { key: 'settings', label: '설정',    icon: <SettingsIcon size={16} /> },
 ];
+
+function TabNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const btnRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [pill, setPill] = useState({ left: 0, width: 0 });
+
+  useEffect(() => {
+    const idx = TABS.findIndex(t => t.key === tab);
+    const btn = btnRefs.current[idx];
+    const cont = containerRef.current;
+    if (!btn || !cont) return;
+    const br = btn.getBoundingClientRect();
+    const cr = cont.getBoundingClientRect();
+    setPill({ left: br.left - cr.left, width: br.width });
+  }, [tab]);
+
+  return (
+    <div ref={containerRef} className="relative hidden sm:flex items-center gap-1 bg-gray-100 p-1 rounded-2xl">
+      <span
+        className="absolute top-1 bottom-1 bg-white rounded-xl shadow-sm pointer-events-none"
+        style={{
+          left: pill.left,
+          width: pill.width,
+          transition: 'left 0.32s cubic-bezier(0.4,0,0.2,1), width 0.32s cubic-bezier(0.4,0,0.2,1)',
+        }}
+      />
+      {TABS.map((t, i) => (
+        <button
+          key={t.key}
+          ref={el => { btnRefs.current[i] = el; }}
+          onClick={() => setTab(t.key)}
+          className={`relative z-10 flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors duration-200 select-none ${
+            tab === t.key ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          {t.icon} {t.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function MobileTabBar({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const btnRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [line, setLine] = useState({ left: 0, width: 0 });
+
+  useEffect(() => {
+    const idx = TABS.findIndex(t => t.key === tab);
+    const btn = btnRefs.current[idx];
+    const cont = containerRef.current;
+    if (!btn || !cont) return;
+    const br = btn.getBoundingClientRect();
+    const cr = cont.getBoundingClientRect();
+    setLine({ left: br.left - cr.left + br.width * 0.2, width: br.width * 0.6 });
+  }, [tab]);
+
+  return (
+    <nav ref={containerRef} className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex z-20">
+      <span
+        className="absolute top-0 h-0.5 bg-indigo-500 rounded-full pointer-events-none"
+        style={{
+          left: line.left,
+          width: line.width,
+          transition: 'left 0.32s cubic-bezier(0.4,0,0.2,1), width 0.32s cubic-bezier(0.4,0,0.2,1)',
+        }}
+      />
+      {TABS.map((t, i) => (
+        <button
+          key={t.key}
+          ref={el => { btnRefs.current[i] = el; }}
+          onClick={() => setTab(t.key)}
+          className={`flex-1 flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors duration-200 ${
+            tab === t.key ? 'text-indigo-600' : 'text-gray-400'
+          }`}
+        >
+          {t.icon} {t.label}
+        </button>
+      ))}
+    </nav>
+  );
+}
 
 export default function App() {
   const [token, setToken]     = useState<string | null>(localStorage.getItem('token'));
@@ -62,9 +144,7 @@ export default function App() {
 
   if (!token || !user) return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <Login onSuccess={handleLogin} />
-      </div>
+      <div className="w-full max-w-md"><Login onSuccess={handleLogin} /></div>
     </div>
   );
 
@@ -73,7 +153,7 @@ export default function App() {
       <div className="w-full max-w-md bg-white p-8 rounded-3xl shadow-sm border border-gray-100 text-center">
         <h2 className="text-2xl font-bold text-gray-800 mb-2">환영합니다!</h2>
         <p className="text-gray-500 mb-6">사용하실 닉네임을 설정해주세요.</p>
-        <Settings user={user} token={token} onUpdate={(nickname) => setUser({ ...user, nickname })} />
+        <Settings user={user} token={token} onUpdate={(n) => setUser({ ...user, nickname: n })} />
       </div>
     </div>
   );
@@ -81,110 +161,77 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
 
-      {/* ── Header ── */}
+      {/* Header */}
       <header className="bg-white border-b border-gray-100 sticky top-0 z-20">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <h1 className="text-xl font-bold text-indigo-600 tracking-tight">StudyTimer</h1>
-
-          {/* Tab nav — desktop */}
-          <nav className="hidden sm:flex items-center gap-1 bg-gray-100 p-1 rounded-2xl">
-            {TABS.map(t => (
-              <button
-                key={t.key}
-                onClick={() => setTab(t.key)}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                  tab === t.key
-                    ? 'bg-white text-indigo-600 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-800'
-                }`}
-              >
-                {t.icon} {t.label}
-              </button>
-            ))}
-          </nav>
-
+          <TabNav tab={tab} setTab={setTab} />
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium text-gray-600 hidden sm:block">{user.nickname}</span>
-            <button
-              onClick={handleLogout}
-              className="p-2 text-gray-400 hover:text-red-500 transition-colors rounded-full hover:bg-red-50"
-            >
+            <button onClick={handleLogout} className="p-2 text-gray-400 hover:text-red-500 transition-colors rounded-full hover:bg-red-50">
               <LogOut size={19} />
             </button>
           </div>
         </div>
       </header>
 
-      {/* ── Main ── */}
       <main className="max-w-6xl mx-auto px-4 py-8 pb-24 sm:pb-8">
 
-        {/* TIMER TAB */}
+        {/* ── TIMER TAB ─────────────────────────────── */}
         {tab === 'timer' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-            {/* Left — Timer + cumulative */}
-            <div className="lg:col-span-4 space-y-6">
+            {/* Left 8-col: timer (full width) + stats row below */}
+            <div className="lg:col-span-8 space-y-6">
+
+              {/* Timer card — full 8-col width */}
               <Timer token={token} onLogAdded={handleLogAdded} />
 
-              <div className="bg-indigo-50 rounded-3xl p-6 border border-indigo-100 flex items-center justify-between">
-                <div>
-                  <p className="text-indigo-800 font-medium mb-1">총 누적 공부 시간</p>
-                  <p className="text-3xl font-bold text-indigo-900">
-                    {Math.floor(user.totalTime / 3600000)}시간{' '}
-                    {Math.floor((user.totalTime % 3600000) / 60000)}분
-                  </p>
+              {/* Stats row: total banner + goal tracker */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="bg-indigo-50 rounded-3xl p-6 border border-indigo-100 flex items-center justify-between">
+                  <div>
+                    <p className="text-indigo-800 font-medium mb-1">총 누적 공부 시간</p>
+                    <p className="text-3xl font-bold text-indigo-900">
+                      {Math.floor(user.totalTime / 3600000)}시간{' '}
+                      {Math.floor((user.totalTime % 3600000) / 60000)}분
+                    </p>
+                  </div>
+                  <div className="w-14 h-14 bg-indigo-200 rounded-full flex items-center justify-center text-indigo-600">
+                    <TrophyIcon size={28} />
+                  </div>
                 </div>
-                <div className="w-14 h-14 bg-indigo-200 rounded-full flex items-center justify-center text-indigo-600">
-                  <TrophyIcon size={28} />
-                </div>
+
+                <GoalTracker totalTime={user.totalTime} subjectStats={user.subjectStats || {}} />
               </div>
 
               <SubjectStats subjectStats={user.subjectStats || {}} totalTime={user.totalTime} />
             </div>
 
-            {/* Middle — Goal + Active */}
+            {/* Right 4-col */}
             <div className="lg:col-span-4 space-y-6">
-              <GoalTracker totalTime={user.totalTime} subjectStats={user.subjectStats || {}} />
               <ActiveUsers />
-            </div>
-
-            {/* Right — Leaderboard */}
-            <div className="lg:col-span-4">
               <Leaderboard />
             </div>
           </div>
         )}
 
-        {/* PLANNER TAB */}
+        {/* ── PLANNER TAB ───────────────────────────── */}
         {tab === 'planner' && (
           <div className="max-w-2xl mx-auto">
             <DailyPlanner />
           </div>
         )}
 
-        {/* SETTINGS TAB */}
+        {/* ── SETTINGS TAB ──────────────────────────── */}
         {tab === 'settings' && (
           <div className="max-w-lg mx-auto">
-            <Settings user={user} token={token} onUpdate={(nickname) => setUser({ ...user, nickname })} />
+            <Settings user={user} token={token} onUpdate={(n) => setUser({ ...user, nickname: n })} />
           </div>
         )}
       </main>
 
-      {/* ── Bottom tab bar — mobile ── */}
-      <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex z-20">
-        {TABS.map(t => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            className={`flex-1 flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors ${
-              tab === t.key ? 'text-indigo-600' : 'text-gray-400'
-            }`}
-          >
-            {t.icon}
-            {t.label}
-          </button>
-        ))}
-      </nav>
+      <MobileTabBar tab={tab} setTab={setTab} />
     </div>
   );
 }
