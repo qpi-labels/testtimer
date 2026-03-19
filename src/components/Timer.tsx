@@ -4,6 +4,8 @@ import { api } from '../api';
 
 interface TimerProps {
   token: string;
+  nickname: string;
+  grade?: number;
   onLogAdded: (totalTime: number, subjectStats: Record<string, number>) => void;
 }
 
@@ -12,6 +14,13 @@ interface Subject {
   name: string;
 }
 
+
+// 스프레드시트 인젝션 방지 + 길이 제한
+function sanitize(value: string, maxLen = 10): string {
+  let v = value.replace(/[\r\n\t\x00-\x1F\x7F]/g, '');
+  v = v.replace(/^[=+\-@/]+/, '');
+  return [...v].slice(0, maxLen).join('');
+}
 const DEFAULT_SUBJECTS: Subject[] = [
   { emoji: '📖', name: '국어' },
   { emoji: '📐', name: '수학' },
@@ -34,7 +43,7 @@ function loadSubjects(): Subject[] {
   } catch { return DEFAULT_SUBJECTS; }
 }
 
-export function Timer({ token, onLogAdded }: TimerProps) {
+export function Timer({ token, nickname, grade, onLogAdded }: TimerProps) {
   const [subjects, setSubjects]     = useState<Subject[]>(loadSubjects);
   const [subject, setSubject]       = useState<Subject>(subjects[0] || DEFAULT_SUBJECTS[0]);
   const [isRunning, setIsRunning]   = useState(false);
@@ -81,7 +90,7 @@ export function Timer({ token, onLogAdded }: TimerProps) {
     const now = Date.now();
     setStartTime(now);
     setIsRunning(true);
-    try { await api.setActive(token, subject.name, subject.emoji, now); } catch {}
+    try { await api.setActive(token, subject.name, subject.emoji, now, nickname, grade); } catch {}
   };
 
   const handleStop = async () => {
@@ -198,7 +207,9 @@ export function Timer({ token, onLogAdded }: TimerProps) {
                 type="text"
                 value={newEmoji}
                 onChange={e => {
-                  const chars = [...e.target.value];
+                  // 제어문자·스프레드시트 함수 문자 차단
+                  const raw = e.target.value.replace(/[\r\n\t\x00-\x1F\x7F=+\-@/]/g, '');
+                  const chars = [...raw];
                   const val = chars.slice(-2).join('');
                   if (val) setNewEmoji(val);
                 }}
@@ -217,12 +228,12 @@ export function Timer({ token, onLogAdded }: TimerProps) {
                     ref={nameInputRef}
                     type="text"
                     value={newName}
-                    onChange={e => setNewName(e.target.value)}
+                    onChange={e => setNewName(sanitize(e.target.value, 10))}
                     onKeyDown={e => {
                       if (e.key === 'Enter') addSubject();
                       if (e.key === 'Escape') setShowAdd(false);
                     }}
-                    placeholder="과목명 입력"
+                    maxLength={15} placeholder="과목명 입력"
                     className="flex-1 text-sm text-gray-700 outline-none bg-transparent"
                   />
                 </div>
