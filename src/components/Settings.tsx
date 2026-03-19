@@ -5,11 +5,12 @@ import { api, User } from '../api';
 interface SettingsProps {
   user: User;
   token: string;
-  onUpdate: (nickname: string) => void;
+  onUpdate: (nickname: string, grade?: number) => void;
 }
 
 export function Settings({ user, token, onUpdate }: SettingsProps) {
   const [nickname, setNickname] = useState(user.nickname);
+  const [grade, setGrade]       = useState<number>(user.grade ?? 0);
   const [saving, setSaving]     = useState(false);
 
   const handleSave = async () => {
@@ -17,8 +18,9 @@ export function Settings({ user, token, onUpdate }: SettingsProps) {
     setSaving(true);
     try {
       const newNickname = await api.setNickname(token, nickname);
-      onUpdate(newNickname);
-      alert('닉네임이 변경되었습니다.');
+      if (grade > 0) await api.setGrade(token, grade);
+      onUpdate(newNickname, grade > 0 ? grade : undefined);
+      alert('저장되었습니다.');
     } catch (err: any) {
       alert('변경 실패: ' + err.message);
     } finally {
@@ -47,6 +49,25 @@ export function Settings({ user, token, onUpdate }: SettingsProps) {
           </div>
 
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">학년</label>
+            <div className="flex gap-2">
+              {[0, 1, 2, 3].map(g => (
+                <button
+                  key={g}
+                  onClick={() => setGrade(g)}
+                  className={`flex-1 py-2 rounded-xl text-sm font-medium border transition-all ${
+                    grade === g
+                      ? 'bg-indigo-600 text-white border-indigo-600'
+                      : 'bg-white text-gray-500 border-gray-200 hover:border-indigo-300 hover:text-indigo-500'
+                  }`}
+                >
+                  {g === 0 ? '미설정' : `${g}학년`}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">닉네임</label>
             <div className="flex space-x-2">
               <div className="relative flex-1">
@@ -66,7 +87,7 @@ export function Settings({ user, token, onUpdate }: SettingsProps) {
               </div>
               <button
                 onClick={handleSave}
-                disabled={saving || nickname === user.nickname}
+                disabled={saving || (nickname === user.nickname && grade === (user.grade ?? 0))}
                 className="px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-colors flex items-center"
               >
                 <Save size={18} className="mr-1" /> 저장
@@ -95,7 +116,7 @@ export function Settings({ user, token, onUpdate }: SettingsProps) {
             <span className="text-xs text-gray-400 font-medium w-28 flex-shrink-0">Enhanced by</span>
             <div className="flex items-center gap-2">
               <img
-                src="https://raw.githubusercontent.com/lobehub/lobe-icons/refs/heads/master/packages/static-png/dark/claude-color.png"
+                src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Claude_AI_logo.svg/512px-Claude_AI_logo.svg.png"
                 alt="Claude"
                 className="h-4 w-4 object-contain"
               />
@@ -108,7 +129,7 @@ export function Settings({ user, token, onUpdate }: SettingsProps) {
             <span className="text-xs text-gray-400 font-medium w-28 flex-shrink-0" />
             <div className="flex items-center gap-2">
               <img
-                src="https://brandlogos.net/wp-content/uploads/2025/03/gemini_icon-logo_brandlogos.net_aacx5-768x768.png"
+                src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Google_Gemini_logo.svg/512px-Google_Gemini_logo.svg.png"
                 alt="Google Gemini"
                 className="h-4 w-4 object-contain"
               />
@@ -123,7 +144,7 @@ export function Settings({ user, token, onUpdate }: SettingsProps) {
             <span className="text-xs text-gray-400 font-medium w-28 flex-shrink-0">Secured by</span>
             <div className="flex items-center gap-2">
               <img
-                src="https://www.svgrepo.com/show/353564/cloudflare.svg"
+                src="https://cdn.iconscout.com/icon/free/png-256/free-cloudflare-icon-download-in-svg-png-gif-file-formats--logo-brand-world-logos-vol-8-pack-icons-282559.png"
                 alt="Cloudflare"
                 className="h-4 w-auto object-contain"
               />
