@@ -8,9 +8,9 @@ interface LoginProps {
 export function Login({ onSuccess }: LoginProps) {
   return (
     <div className="flex flex-col items-center justify-center h-full space-y-6">
-      <h1 className="text-3xl font-bold text-gray-800">Study Timer</h1>
+      <h1 className="text-3xl font-bold text-gray-800">충곽 타이머</h1>
       <p className="text-gray-500 text-center">
-        구글 계정으로 로그인하고<br />공부 시간을 기록해보세요.
+        충곽 학생들과 경쟁하다!
       </p>
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <GoogleLogin
