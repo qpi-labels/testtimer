@@ -64,7 +64,12 @@ export function ActiveUsers() {
             <div className="flex items-center gap-2">
               <span className="text-lg">{u.emoji || '📚'}</span>
               <div>
-                <p className="font-semibold text-gray-800 text-sm">{u.nickname}</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="font-semibold text-gray-800 text-sm">{u.nickname}</p>
+                  {u.grade && (
+                    <span className="text-[10px] font-bold text-gray-400">{u.grade}학년</span>
+                  )}
+                </div>
                 <p className="text-xs text-green-600 font-medium">{u.subject}</p>
               </div>
             </div>
