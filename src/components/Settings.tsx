@@ -115,7 +115,7 @@ export function Settings({ user, token, onUpdate }: SettingsProps) {
             <span className="text-xs text-gray-400 font-medium w-28 flex-shrink-0">Secured by</span>
             <div className="flex items-center gap-2">
               <img
-                src="https://cdn.iconscout.com/icon/free/png-256/free-cloudflare-icon-download-in-svg-png-gif-file-formats--logo-brand-world-logos-vol-8-pack-icons-282559.png"
+                src="https://www.svgrepo.com/show/353564/cloudflare.svg"
                 alt="Cloudflare"
                 className="h-4 w-auto object-contain"
               />
