@@ -6,6 +6,7 @@ import { Leaderboard } from './components/Leaderboard';
 import { Settings } from './components/Settings';
 import { SubjectStats } from './components/SubjectStats';
 import { ActiveUsers } from './components/ActiveUsers';
+import { DailyPlanner } from './components/DailyPlanner';
 import { LogOut, User as UserIcon } from 'lucide-react';
 
 export default function App() {
@@ -86,7 +87,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
       <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <h1 className="text-xl font-bold text-indigo-600 tracking-tight">StudyTimer</h1>
           <div className="flex items-center space-x-4">
             <button
@@ -106,10 +107,11 @@ export default function App() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 py-8">
+      <main className="max-w-6xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
           {/* Left column */}
-          <div className="lg:col-span-7 space-y-6">
+          <div className="lg:col-span-4 space-y-6">
             {view === 'timer' ? (
               <Timer token={token} onLogAdded={handleLogAdded} />
             ) : (
@@ -120,32 +122,36 @@ export default function App() {
               />
             )}
 
-            {/* Total time banner */}
             <div className="bg-indigo-50 rounded-3xl p-6 border border-indigo-100 flex items-center justify-between">
               <div>
-                <p className="text-indigo-800 font-medium mb-1">나의 총 누적 공부 시간</p>
+                <p className="text-indigo-800 font-medium mb-1">총 누적 공부 시간</p>
                 <p className="text-3xl font-bold text-indigo-900">
                   {Math.floor(user.totalTime / 3600000)}시간{' '}
                   {Math.floor((user.totalTime % 3600000) / 60000)}분
                 </p>
               </div>
-              <div className="w-16 h-16 bg-indigo-200 rounded-full flex items-center justify-center text-indigo-600">
-                <Trophy size={32} />
+              <div className="w-14 h-14 bg-indigo-200 rounded-full flex items-center justify-center text-indigo-600">
+                <Trophy size={28} />
               </div>
             </div>
 
-            {/* Subject stats */}
             <SubjectStats
               subjectStats={user.subjectStats || {}}
               totalTime={user.totalTime}
             />
           </div>
 
+          {/* Middle column — Daily Planner */}
+          <div className="lg:col-span-4">
+            <DailyPlanner />
+          </div>
+
           {/* Right column */}
-          <div className="lg:col-span-5 space-y-6">
+          <div className="lg:col-span-4 space-y-6">
             <ActiveUsers />
             <Leaderboard />
           </div>
+
         </div>
       </main>
     </div>
