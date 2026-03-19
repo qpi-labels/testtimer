@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings as SettingsIcon, Save } from 'lucide-react';
+import { Settings as SettingsIcon, Save, Code2, Sparkles, Shield } from 'lucide-react';
 import { api, User } from '../api';
 
 interface SettingsProps {
@@ -7,6 +7,40 @@ interface SettingsProps {
   token: string;
   onUpdate: (nickname: string) => void;
 }
+
+const credits = [
+  {
+    role: 'Developed by',
+    icon: <Code2 size={15} className="text-indigo-400" />,
+    items: [
+      { name: '2026 QPI', logo: null },
+    ],
+  },
+  {
+    role: 'Enhanced by',
+    icon: <Sparkles size={15} className="text-violet-400" />,
+    items: [
+      {
+        name: 'Claude',
+        logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Claude_AI_logo.svg/512px-Claude_AI_logo.svg.png',
+      },
+      {
+        name: 'Google Gemini',
+        logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Google_Gemini_logo.svg/512px-Google_Gemini_logo.svg.png',
+      },
+    ],
+  },
+  {
+    role: 'Secured by',
+    icon: <Shield size={15} className="text-orange-400" />,
+    items: [
+      {
+        name: 'Cloudflare',
+        logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/94/Cloudflare_Logo.png/320px-Cloudflare_Logo.png',
+      },
+    ],
+  },
+];
 
 export function Settings({ user, token, onUpdate }: SettingsProps) {
   const [nickname, setNickname] = useState(user.nickname);
@@ -28,111 +62,104 @@ export function Settings({ user, token, onUpdate }: SettingsProps) {
 
   return (
     <div className="space-y-6">
-      {/* ── Profile card ── */}
-      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
-          <SettingsIcon className="mr-2 text-gray-500" size={20} /> 설정
-        </h2>
 
+      {/* ── Profile ── */}
+      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
+        <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+          <SettingsIcon size={20} className="text-gray-400" /> 설정
+        </h2>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">이메일</label>
+            <label className="block text-sm font-medium text-gray-600 mb-1.5">이메일</label>
             <input
-              type="text"
-              value={user.email}
-              disabled
-              className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-gray-500 cursor-not-allowed"
+              type="text" value={user.email} disabled
+              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-400 cursor-not-allowed text-sm"
             />
           </div>
-
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">닉네임</label>
-            <div className="flex space-x-2">
+            <label className="block text-sm font-medium text-gray-600 mb-1.5">닉네임</label>
+            <div className="flex gap-2">
               <input
-                type="text"
-                value={nickname}
+                type="text" value={nickname}
                 onChange={e => setNickname(e.target.value)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow"
+                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow"
                 placeholder="닉네임을 입력하세요"
               />
               <button
                 onClick={handleSave}
                 disabled={saving || nickname === user.nickname}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-colors flex items-center"
+                className="px-4 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-40 transition-colors flex items-center gap-1.5 text-sm font-medium"
               >
-                <Save size={18} className="mr-1" /> 저장
+                <Save size={16} /> 저장
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ── Credits card ── */}
-      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
-        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-5">Credits</h3>
+      {/* ── Credits ── */}
+      <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl overflow-hidden shadow-xl">
 
-        <div className="space-y-4">
-          {/* Developed by */}
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-400 font-medium w-28 flex-shrink-0">Developed by</span>
-            <span className="text-sm font-semibold text-gray-700">2026 QPI</span>
+        {/* decorative glow blobs */}
+        <div className="absolute -top-12 -left-12 w-48 h-48 bg-indigo-600 opacity-10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-12 -right-12 w-48 h-48 bg-violet-600 opacity-10 rounded-full blur-3xl pointer-events-none" />
+
+        {/* subtle grid texture */}
+        <div
+          className="absolute inset-0 opacity-[0.03] pointer-events-none"
+          style={{
+            backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)',
+            backgroundSize: '32px 32px',
+          }}
+        />
+
+        <div className="relative z-10 p-7">
+          {/* Header */}
+          <div className="flex items-center gap-2 mb-6">
+            <span className="text-xs font-bold tracking-[0.2em] uppercase text-slate-400">Credits</span>
+            <div className="flex-1 h-px bg-slate-700" />
           </div>
 
-          <div className="h-px bg-gray-50" />
+          {/* Credit rows */}
+          <div className="space-y-5">
+            {credits.map((section, si) => (
+              <div key={si} className="flex items-start gap-4">
+                {/* Role label */}
+                <div className="flex items-center gap-1.5 w-28 flex-shrink-0 mt-0.5">
+                  {section.icon}
+                  <span className="text-xs text-slate-500 font-medium">{section.role}</span>
+                </div>
 
-          {/* Enhanced by Claude */}
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-400 font-medium w-28 flex-shrink-0">Enhanced by</span>
-            <div className="flex items-center gap-2">
-              {/* Anthropic / Claude logo */}
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M13.827 3.785L20.02 17.25h-3.01l-1.225-2.865H9.21L7.986 17.25H4.976L11.169 3.785h2.658zm-1.33 3.874l-2.077 4.86h4.154l-2.077-4.86z" fill="#D97757"/>
-              </svg>
-              <span className="text-sm font-semibold text-gray-700">Claude</span>
-            </div>
+                {/* Items */}
+                <div className="flex flex-wrap gap-2">
+                  {section.items.map((item, ii) => (
+                    <div
+                      key={ii}
+                      className="flex items-center gap-2 px-3 py-1.5 bg-slate-700/60 border border-slate-600/50 rounded-full backdrop-blur-sm"
+                    >
+                      {item.logo ? (
+                        <img
+                          src={item.logo}
+                          alt={item.name}
+                          className="h-4 w-auto object-contain"
+                          onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                        />
+                      ) : (
+                        <span className="w-4 h-4 rounded-full bg-indigo-500 flex items-center justify-center text-[9px] font-black text-white">Q</span>
+                      )}
+                      <span className="text-sm font-semibold text-slate-200">{item.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
 
-          {/* Enhanced by Gemini */}
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-400 font-medium w-28 flex-shrink-0"></span>
-            <div className="flex items-center gap-2">
-              {/* Google Gemini logo */}
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2C12 2 6.5 8.5 6.5 12S12 22 12 22s5.5-6.5 5.5-10S12 2 12 2z" fill="url(#gemini-grad)"/>
-                <path d="M2 12c0 0 6.5-5.5 10-5.5S22 12 22 12s-6.5 5.5-10 5.5S2 12 2 12z" fill="url(#gemini-grad2)" opacity="0.85"/>
-                <defs>
-                  <linearGradient id="gemini-grad" x1="12" y1="2" x2="12" y2="22" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#4285F4"/>
-                    <stop offset="0.5" stopColor="#9B72CB"/>
-                    <stop offset="1" stopColor="#EA4335"/>
-                  </linearGradient>
-                  <linearGradient id="gemini-grad2" x1="2" y1="12" x2="22" y2="12" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#4285F4" stopOpacity="0.6"/>
-                    <stop offset="1" stopColor="#34A853" stopOpacity="0.6"/>
-                  </linearGradient>
-                </defs>
-              </svg>
-              <span className="text-sm font-semibold text-gray-700">Google Gemini</span>
-            </div>
-          </div>
-
-          <div className="h-px bg-gray-50" />
-
-          {/* Secured by Cloudflare */}
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-400 font-medium w-28 flex-shrink-0">Secured by</span>
-            <div className="flex items-center gap-2">
-              {/* Cloudflare logo */}
-              <svg width="22" height="18" viewBox="0 0 80 50" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M51.7 20.6c-.3-1-1.1-1.7-2.1-1.9l-1.1-.2c.1-.4.1-.8.1-1.2 0-5.4-4.4-9.8-9.8-9.8-3.8 0-7.2 2.2-8.8 5.5-.7-.4-1.5-.6-2.4-.6-2.8 0-5 2.2-5 5 0 .3 0 .6.1.9C20 18.8 18 21 18 23.7c0 3 2.4 5.4 5.4 5.4H50c2.7 0 5-2.1 5.2-4.8.1-1.5-.5-2.9-1.6-3.7h-1.9z" fill="#F6821F"/>
-                <path d="M53.7 22.8c-.2 0-.4 0-.6.1l.1-.5c0-2.2-1.8-4-4-4-.6 0-1.2.1-1.7.4-.5-3-3.1-5.3-6.2-5.3-3.5 0-6.3 2.8-6.3 6.3v.2c-.3-.1-.6-.1-.9-.1-1.8 0-3.3 1.5-3.3 3.3s1.5 3.3 3.3 3.3h19.6c1.6 0 2.9-1.3 2.9-2.9 0-1.6-1.3-2.8-2.9-2.8z" fill="#FBAD41"/>
-              </svg>
-              <span className="text-sm font-semibold text-gray-700">Cloudflare</span>
-            </div>
+          {/* Footer */}
+          <div className="mt-7 pt-5 border-t border-slate-700/60 flex items-center justify-between">
+            <span className="text-xs text-slate-500">© 2026 QPI</span>
           </div>
         </div>
-
-        <p className="mt-6 text-center text-xs text-gray-300">© 2026 QPI. All rights reserved.</p>
       </div>
     </div>
   );
