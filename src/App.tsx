@@ -188,7 +188,7 @@ export default function App() {
       {/* ── Header ── */}
       <header className="bg-white border-b border-gray-100 sticky top-0 z-20">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
-          <h1 className="text-xl font-bold text-indigo-600 tracking-tight flex-shrink-0">StudyTimer</h1>
+          <h1 className="text-xl font-bold text-indigo-600 tracking-tight flex-shrink-0">충곽 타이머</h1>
           <TabNav tab={tab} setTab={setTab} />
           <div className="flex items-center gap-3 flex-shrink-0">
             <span className="text-sm font-medium text-gray-600 hidden sm:block">{user.nickname}</span>
