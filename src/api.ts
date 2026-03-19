@@ -143,7 +143,7 @@ export const api = {
     });
   },
 
-  async setActive(token: string, subject: string, emoji: string, startTime: number | null): Promise<void> {
+  async setActive(token: string, subject: string, emoji: string, startTime: number | null, nickname?: string, grade?: number): Promise<void> {
     if (!GAS_URL) {
       if (startTime && mockUser?.nickname) {
         const idx = mockActiveUsers.findIndex(u => u.nickname === mockUser?.nickname);
@@ -158,7 +158,7 @@ export const api = {
     await fetch(GAS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'setActive', token, subject, emoji, startTime }),
+      body: JSON.stringify({ action: 'setActive', token, subject, emoji, startTime, nickname: nickname || '', grade: grade || 0 }),
     });
   },
 };
