@@ -49,13 +49,21 @@ export function Settings({ user, token, onUpdate }: SettingsProps) {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">닉네임</label>
             <div className="flex space-x-2">
-              <input
-                type="text"
-                value={nickname}
-                onChange={e => setNickname(e.target.value)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow"
-                placeholder="닉네임을 입력하세요"
-              />
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  value={nickname}
+                  onChange={e => setNickname(e.target.value)}
+                  maxLength={10}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow pr-14"
+                  placeholder="닉네임을 입력하세요"
+                />
+                <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium ${
+                  nickname.length >= 10 ? 'text-red-400' : 'text-gray-400'
+                }`}>
+                  {nickname.length}/10
+                </span>
+              </div>
               <button
                 onClick={handleSave}
                 disabled={saving || nickname === user.nickname}
@@ -84,7 +92,7 @@ export function Settings({ user, token, onUpdate }: SettingsProps) {
 
           {/* Enhanced by — Claude */}
           <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-400 font-medium w-28 flex-shrink-0">Enhanced with</span>
+            <span className="text-xs text-gray-400 font-medium w-28 flex-shrink-0">Enhanced by</span>
             <div className="flex items-center gap-2">
               <img
                 src="https://raw.githubusercontent.com/lobehub/lobe-icons/refs/heads/master/packages/static-png/dark/claude-color.png"
