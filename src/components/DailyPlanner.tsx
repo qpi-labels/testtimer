@@ -1,0 +1,342 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Plus, Check, Trash2, ChevronLeft, ChevronRight, ClipboardList, GripVertical } from 'lucide-react';
+
+interface Task {
+  id: string;
+  text: string;
+  done: boolean;
+  category: string;
+  createdAt: number;
+}
+
+interface DayData {
+  tasks: Task[];
+}
+
+const STORAGE_KEY = 'dailyPlanner_v1';
+const CATEGORIES = ['공부', '운동', '독서', '기타'];
+const CATEGORY_COLORS: Record<string, { bg: string; text: string; dot: string }> = {
+  '공부': { bg: 'bg-indigo-50', text: 'text-indigo-700', dot: 'bg-indigo-400' },
+  '운동': { bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-400' },
+  '독서': { bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-400' },
+  '기타': { bg: 'bg-slate-50', text: 'text-slate-600', dot: 'bg-slate-400' },
+};
+
+function toDateKey(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function loadAll(): Record<string, DayData> {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+}
+
+function saveAll(data: Record<string, DayData>) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function formatDateLabel(date: Date) {
+  const today = new Date();
+  const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+  const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+  const key = toDateKey(date);
+  if (key === toDateKey(today)) return '오늘';
+  if (key === toDateKey(yesterday)) return '어제';
+  if (key === toDateKey(tomorrow)) return '내일';
+  return '';
+}
+
+function formatDateFull(date: Date) {
+  return date.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
+}
+
+export function DailyPlanner() {
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [allData, setAllData] = useState<Record<string, DayData>>(loadAll);
+  const [newText, setNewText] = useState('');
+  const [newCategory, setNewCategory] = useState('공부');
+  const [filter, setFilter] = useState<string>('전체');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const dateKey = toDateKey(currentDate);
+  const dayData: DayData = allData[dateKey] || { tasks: [] };
+  const tasks = dayData.tasks;
+
+  useEffect(() => { saveAll(allData); }, [allData]);
+
+  const updateTasks = (newTasks: Task[]) => {
+    setAllData(prev => ({ ...prev, [dateKey]: { tasks: newTasks } }));
+  };
+
+  const addTask = () => {
+    const text = newText.trim();
+    if (!text) return;
+    const task: Task = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      text,
+      done: false,
+      category: newCategory,
+      createdAt: Date.now(),
+    };
+    updateTasks([...tasks, task]);
+    setNewText('');
+    inputRef.current?.focus();
+  };
+
+  const toggleTask = (id: string) => {
+    updateTasks(tasks.map(t => t.id === id ? { ...t, done: !t.done } : t));
+  };
+
+  const deleteTask = (id: string) => {
+    updateTasks(tasks.filter(t => t.id !== id));
+  };
+
+  const clearDone = () => {
+    updateTasks(tasks.filter(t => !t.done));
+  };
+
+  const goDay = (delta: number) => {
+    const d = new Date(currentDate);
+    d.setDate(d.getDate() + delta);
+    setCurrentDate(d);
+  };
+
+  const goToday = () => setCurrentDate(new Date());
+
+  const filtered = filter === '전체' ? tasks : tasks.filter(t => t.category === filter);
+  const doneCount = tasks.filter(t => t.done).length;
+  const totalCount = tasks.length;
+  const progress = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+  const dateLabel = formatDateLabel(currentDate);
+  const isToday = toDateKey(currentDate) === toDateKey(new Date());
+
+  return (
+    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+      {/* Header */}
+      <div className="px-6 pt-6 pb-4 border-b border-gray-50">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+            <ClipboardList size={20} className="text-violet-500" />
+            일일 플래너
+          </h2>
+          {!isToday && (
+            <button
+              onClick={goToday}
+              className="text-xs px-3 py-1.5 bg-violet-100 text-violet-700 rounded-full font-medium hover:bg-violet-200 transition-colors"
+            >
+              오늘로
+            </button>
+          )}
+        </div>
+
+        {/* Date nav */}
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => goDay(-1)}
+            className="p-1.5 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <div className="text-center">
+            <p className="text-sm font-bold text-gray-800">{formatDateFull(currentDate)}</p>
+            {dateLabel && (
+              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${isToday ? 'bg-violet-100 text-violet-600' : 'bg-gray-100 text-gray-500'}`}>
+                {dateLabel}
+              </span>
+            )}
+          </div>
+          <button
+            onClick={() => goDay(1)}
+            className="p-1.5 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+          >
+            <ChevronRight size={18} />
+          </button>
+        </div>
+
+        {/* Progress bar */}
+        {totalCount > 0 && (
+          <div className="mt-4">
+            <div className="flex justify-between items-center mb-1.5">
+              <span className="text-xs text-gray-400">{doneCount}/{totalCount} 완료</span>
+              <span className="text-xs font-bold text-violet-600">{progress}%</span>
+            </div>
+            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-violet-400 to-violet-600 rounded-full transition-all duration-500"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Add task */}
+      <div className="px-6 py-4 border-b border-gray-50 bg-gray-50/50">
+        <div className="flex gap-2 mb-2">
+          {CATEGORIES.map(cat => {
+            const c = CATEGORY_COLORS[cat];
+            return (
+              <button
+                key={cat}
+                onClick={() => setNewCategory(cat)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  newCategory === cat
+                    ? `${c.bg} ${c.text} shadow-sm ring-1 ring-inset ring-current/20`
+                    : 'bg-white text-gray-500 border border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`} />
+                {cat}
+              </button>
+            );
+          })}
+        </div>
+        <div className="flex gap-2">
+          <input
+            ref={inputRef}
+            value={newText}
+            onChange={e => setNewText(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') addTask(); }}
+            placeholder="할 일을 입력하세요..."
+            className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent transition-shadow"
+          />
+          <button
+            onClick={addTask}
+            disabled={!newText.trim()}
+            className="px-4 py-2.5 bg-violet-600 text-white rounded-xl hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 flex items-center gap-1.5 text-sm font-medium"
+          >
+            <Plus size={16} /> 추가
+          </button>
+        </div>
+      </div>
+
+      {/* Filter tabs */}
+      <div className="px-6 py-3 flex items-center gap-2 border-b border-gray-50 overflow-x-auto">
+        {['전체', ...CATEGORIES].map(cat => (
+          <button
+            key={cat}
+            onClick={() => setFilter(cat)}
+            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+              filter === cat
+                ? 'bg-gray-800 text-white'
+                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            {cat}
+            {cat === '전체'
+              ? ` (${totalCount})`
+              : ` (${tasks.filter(t => t.category === cat).length})`}
+          </button>
+        ))}
+        {doneCount > 0 && (
+          <button
+            onClick={clearDone}
+            className="ml-auto flex-shrink-0 flex items-center gap-1 text-xs text-red-400 hover:text-red-600 transition-colors px-2 py-1.5"
+          >
+            <Trash2 size={12} /> 완료 삭제
+          </button>
+        )}
+      </div>
+
+      {/* Task list */}
+      <div className="px-6 py-4 space-y-2 max-h-80 overflow-y-auto">
+        {filtered.length === 0 && (
+          <div className="text-center py-10">
+            <p className="text-3xl mb-2">📋</p>
+            <p className="text-sm text-gray-400">
+              {filter === '전체' ? '할 일을 추가해보세요!' : `${filter} 항목이 없습니다.`}
+            </p>
+          </div>
+        )}
+
+        {/* Pending tasks */}
+        {filtered.filter(t => !t.done).map((task, idx) => {
+          const c = CATEGORY_COLORS[task.category] || CATEGORY_COLORS['기타'];
+          return (
+            <div
+              key={task.id}
+              className="group flex items-center gap-3 p-3 rounded-2xl hover:bg-gray-50 transition-colors"
+              style={{ animationDelay: `${idx * 0.04}s` }}
+            >
+              <button
+                onClick={() => toggleTask(task.id)}
+                className="flex-shrink-0 w-5 h-5 rounded-full border-2 border-gray-300 hover:border-violet-400 transition-colors flex items-center justify-center"
+              />
+              <span className={`flex-shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${c.bg} ${c.text}`}>
+                {task.category}
+              </span>
+              <span className="flex-1 text-sm text-gray-700 leading-snug">{task.text}</span>
+              <button
+                onClick={() => deleteTask(task.id)}
+                className="opacity-0 group-hover:opacity-100 p-1 text-gray-300 hover:text-red-400 transition-all"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+          );
+        })}
+
+        {/* Done tasks */}
+        {filtered.filter(t => t.done).length > 0 && (
+          <>
+            {filtered.filter(t => !t.done).length > 0 && (
+              <div className="flex items-center gap-2 py-1">
+                <div className="flex-1 h-px bg-gray-100" />
+                <span className="text-xs text-gray-300 flex-shrink-0">완료됨</span>
+                <div className="flex-1 h-px bg-gray-100" />
+              </div>
+            )}
+            {filtered.filter(t => t.done).map(task => {
+              const c = CATEGORY_COLORS[task.category] || CATEGORY_COLORS['기타'];
+              return (
+                <div
+                  key={task.id}
+                  className="group flex items-center gap-3 p-3 rounded-2xl hover:bg-gray-50 transition-colors opacity-50"
+                >
+                  <button
+                    onClick={() => toggleTask(task.id)}
+                    className="flex-shrink-0 w-5 h-5 rounded-full bg-violet-500 flex items-center justify-center transition-colors"
+                  >
+                    <Check size={11} className="text-white" strokeWidth={3} />
+                  </button>
+                  <span className={`flex-shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${c.bg} ${c.text}`}>
+                    {task.category}
+                  </span>
+                  <span className="flex-1 text-sm text-gray-400 line-through leading-snug">{task.text}</span>
+                  <button
+                    onClick={() => deleteTask(task.id)}
+                    className="opacity-0 group-hover:opacity-100 p-1 text-gray-300 hover:text-red-400 transition-all"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              );
+            })}
+          </>
+        )}
+      </div>
+
+      {/* Footer summary */}
+      {totalCount > 0 && (
+        <div className="px-6 pb-5">
+          <div className="flex gap-2 flex-wrap">
+            {CATEGORIES.map(cat => {
+              const count = tasks.filter(t => t.category === cat).length;
+              if (count === 0) return null;
+              const c = CATEGORY_COLORS[cat];
+              const doneInCat = tasks.filter(t => t.category === cat && t.done).length;
+              return (
+                <div key={cat} className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs ${c.bg} ${c.text}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`} />
+                  {cat} {doneInCat}/{count}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
