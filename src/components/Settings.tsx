@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings as SettingsIcon, Save, Code2, Sparkles, Shield } from 'lucide-react';
+import { Settings as SettingsIcon, Save } from 'lucide-react';
 import { api, User } from '../api';
 
 interface SettingsProps {
@@ -7,40 +7,6 @@ interface SettingsProps {
   token: string;
   onUpdate: (nickname: string) => void;
 }
-
-const credits = [
-  {
-    role: 'Developed by',
-    icon: <Code2 size={15} className="text-indigo-400" />,
-    items: [
-      { name: '2026 QPI', logo: null },
-    ],
-  },
-  {
-    role: 'Enhanced by',
-    icon: <Sparkles size={15} className="text-violet-400" />,
-    items: [
-      {
-        name: 'Claude',
-        logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Claude_AI_logo.svg/512px-Claude_AI_logo.svg.png',
-      },
-      {
-        name: 'Google Gemini',
-        logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Google_Gemini_logo.svg/512px-Google_Gemini_logo.svg.png',
-      },
-    ],
-  },
-  {
-    role: 'Secured by',
-    icon: <Shield size={15} className="text-orange-400" />,
-    items: [
-      {
-        name: 'Cloudflare',
-        logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/94/Cloudflare_Logo.png/320px-Cloudflare_Logo.png',
-      },
-    ],
-  },
-];
 
 export function Settings({ user, token, onUpdate }: SettingsProps) {
   const [nickname, setNickname] = useState(user.nickname);
@@ -63,103 +29,103 @@ export function Settings({ user, token, onUpdate }: SettingsProps) {
   return (
     <div className="space-y-6">
 
-      {/* ── Profile ── */}
+      {/* ── Profile card ── */}
       <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-          <SettingsIcon size={20} className="text-gray-400" /> 설정
+        <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
+          <SettingsIcon className="mr-2 text-gray-500" size={20} /> 설정
         </h2>
+
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1.5">이메일</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">이메일</label>
             <input
-              type="text" value={user.email} disabled
-              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-400 cursor-not-allowed text-sm"
+              type="text"
+              value={user.email}
+              disabled
+              className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-gray-500 cursor-not-allowed"
             />
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1.5">닉네임</label>
-            <div className="flex gap-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">닉네임</label>
+            <div className="flex space-x-2">
               <input
-                type="text" value={nickname}
+                type="text"
+                value={nickname}
                 onChange={e => setNickname(e.target.value)}
-                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow"
                 placeholder="닉네임을 입력하세요"
               />
               <button
                 onClick={handleSave}
                 disabled={saving || nickname === user.nickname}
-                className="px-4 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-40 transition-colors flex items-center gap-1.5 text-sm font-medium"
+                className="px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-colors flex items-center"
               >
-                <Save size={16} /> 저장
+                <Save size={18} className="mr-1" /> 저장
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ── Credits ── */}
-      <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-3xl overflow-hidden shadow-xl">
+      {/* ── Credits card ── */}
+      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
+        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-5">Credits</h3>
 
-        {/* decorative glow blobs */}
-        <div className="absolute -top-12 -left-12 w-48 h-48 bg-indigo-600 opacity-10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-12 -right-12 w-48 h-48 bg-violet-600 opacity-10 rounded-full blur-3xl pointer-events-none" />
+        <div className="space-y-4">
 
-        {/* subtle grid texture */}
-        <div
-          className="absolute inset-0 opacity-[0.03] pointer-events-none"
-          style={{
-            backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)',
-            backgroundSize: '32px 32px',
-          }}
-        />
-
-        <div className="relative z-10 p-7">
-          {/* Header */}
-          <div className="flex items-center gap-2 mb-6">
-            <span className="text-xs font-bold tracking-[0.2em] uppercase text-slate-400">Credits</span>
-            <div className="flex-1 h-px bg-slate-700" />
+          {/* Developed by */}
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-400 font-medium w-28 flex-shrink-0">Developed by</span>
+            <span className="text-sm font-semibold text-gray-700">2026 QPI</span>
           </div>
 
-          {/* Credit rows */}
-          <div className="space-y-5">
-            {credits.map((section, si) => (
-              <div key={si} className="flex items-start gap-4">
-                {/* Role label */}
-                <div className="flex items-center gap-1.5 w-28 flex-shrink-0 mt-0.5">
-                  {section.icon}
-                  <span className="text-xs text-slate-500 font-medium">{section.role}</span>
-                </div>
+          <div className="h-px bg-gray-100" />
 
-                {/* Items */}
-                <div className="flex flex-wrap gap-2">
-                  {section.items.map((item, ii) => (
-                    <div
-                      key={ii}
-                      className="flex items-center gap-2 px-3 py-1.5 bg-slate-700/60 border border-slate-600/50 rounded-full backdrop-blur-sm"
-                    >
-                      {item.logo ? (
-                        <img
-                          src={item.logo}
-                          alt={item.name}
-                          className="h-4 w-auto object-contain"
-                          onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                        />
-                      ) : (
-                        <span className="w-4 h-4 rounded-full bg-indigo-500 flex items-center justify-center text-[9px] font-black text-white">Q</span>
-                      )}
-                      <span className="text-sm font-semibold text-slate-200">{item.name}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
+          {/* Enhanced by — Claude */}
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-400 font-medium w-28 flex-shrink-0">Enhanced with</span>
+            <div className="flex items-center gap-2">
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Claude_AI_logo.svg/512px-Claude_AI_logo.svg.png"
+                alt="Claude"
+                className="h-4 w-4 object-contain"
+              />
+              <span className="text-sm font-semibold text-gray-700">Claude</span>
+            </div>
           </div>
 
-          {/* Footer */}
-          <div className="mt-7 pt-5 border-t border-slate-700/60 flex items-center justify-between">
-            <span className="text-xs text-slate-500">© 2026 QPI</span>
+          {/* Enhanced by — Gemini */}
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-400 font-medium w-28 flex-shrink-0" />
+            <div className="flex items-center gap-2">
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Google_Gemini_logo.svg/512px-Google_Gemini_logo.svg.png"
+                alt="Google Gemini"
+                className="h-4 w-4 object-contain"
+              />
+              <span className="text-sm font-semibold text-gray-700">Google Gemini</span>
+            </div>
           </div>
+
+          <div className="h-px bg-gray-100" />
+
+          {/* Secured by — Cloudflare */}
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-400 font-medium w-28 flex-shrink-0">Secured by</span>
+            <div className="flex items-center gap-2">
+              <img
+                src="https://cdn.iconscout.com/icon/free/png-256/free-cloudflare-icon-download-in-svg-png-gif-file-formats--logo-brand-world-logos-vol-8-pack-icons-282559.png"
+                alt="Cloudflare"
+                className="h-4 w-auto object-contain"
+              />
+              <span className="text-sm font-semibold text-gray-700">Cloudflare</span>
+            </div>
+          </div>
+
         </div>
+
+        <p className="mt-6 text-center text-xs text-gray-300">© 2026 QPI. All rights reserved.</p>
       </div>
     </div>
   );
