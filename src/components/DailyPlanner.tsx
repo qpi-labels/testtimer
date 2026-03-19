@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Plus, Check, Trash2, ChevronLeft, ChevronRight,
-  ClipboardList, Clock, ChevronDown, ChevronUp,
+  ClipboardList, Clock, MoreVertical, X,
 } from 'lucide-react';
 
-interface Task {
+export interface Task {
   id: string;
   text: string;
   done: boolean;
@@ -13,10 +13,10 @@ interface Task {
   goalMinutes?: number;
 }
 
-interface DayData { tasks: Task[] }
+export interface DayData { tasks: Task[] }
 
-const STORAGE_KEY = 'dailyPlanner_v1';
-const CATEGORIES  = ['공부', '운동', '독서', '기타'];
+export const PLANNER_STORAGE_KEY = 'dailyPlanner_v1';
+const CATEGORIES = ['공부', '운동', '독서', '기타'];
 
 const CAT_COLOR: Record<string, { bg: string; text: string; dot: string }> = {
   '공부': { bg: 'bg-indigo-50',  text: 'text-indigo-700',  dot: 'bg-indigo-400'  },
@@ -24,15 +24,15 @@ const CAT_COLOR: Record<string, { bg: string; text: string; dot: string }> = {
   '독서': { bg: 'bg-amber-50',   text: 'text-amber-700',   dot: 'bg-amber-400'   },
   '기타': { bg: 'bg-slate-50',   text: 'text-slate-600',   dot: 'bg-slate-400'   },
 };
-function catColor(cat: string) { return CAT_COLOR[cat] ?? CAT_COLOR['기타']; }
+export function catColor(cat: string) { return CAT_COLOR[cat] ?? CAT_COLOR['기타']; }
 
-function toDateKey(d: Date) { return d.toISOString().slice(0, 10); }
-function loadAll(): Record<string, DayData> {
-  try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : {}; }
+export function toDateKey(d: Date) { return d.toISOString().slice(0, 10); }
+export function loadAllPlanner(): Record<string, DayData> {
+  try { const r = localStorage.getItem(PLANNER_STORAGE_KEY); return r ? JSON.parse(r) : {}; }
   catch { return {}; }
 }
 function saveAll(data: Record<string, DayData>) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  localStorage.setItem(PLANNER_STORAGE_KEY, JSON.stringify(data));
 }
 function fmtDateFull(d: Date) {
   return d.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
@@ -46,7 +46,7 @@ function fmtDateLabel(d: Date) {
   if (toDateKey(d) === toDateKey(t))     return '내일';
   return '';
 }
-function fmtGoal(min: number) {
+export function fmtGoal(min: number) {
   if (min < 60) return `${min}분`;
   const h = Math.floor(min / 60), m = min % 60;
   return m ? `${h}시간 ${m}분` : `${h}시간`;
@@ -54,48 +54,143 @@ function fmtGoal(min: number) {
 
 const GOAL_PRESETS = [15, 30, 60, 90, 120];
 
-/* ── Goal picker ── */
-function GoalPicker({ value, onChange, onClose }: {
+/* ── Goal picker modal ── */
+function GoalModal({ value, onSave, onClose }: {
   value?: number;
-  onChange: (min: number | undefined) => void;
+  onSave: (min: number | undefined) => void;
   onClose: () => void;
 }) {
   const [h, setH] = useState(value ? String(Math.floor(value / 60)) : '');
   const [m, setM] = useState(value ? String(value % 60) : '');
+  const ref = useRef<HTMLDivElement>(null);
+
+  // close on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [onClose]);
 
   const apply = () => {
     const total = (Number(h) || 0) * 60 + (Number(m) || 0);
-    onChange(total > 0 ? total : undefined);
+    onSave(total > 0 ? total : undefined);
     onClose();
   };
-  const clear = () => { onChange(undefined); onClose(); };
+
+  const currentVal = (Number(h) || 0) * 60 + (Number(m) || 0);
 
   return (
-    <div className="mt-2 p-3 bg-violet-50 border border-violet-100 rounded-2xl space-y-2">
-      <div className="flex flex-wrap gap-1.5">
-        {GOAL_PRESETS.map(p => (
-          <button key={p} onClick={() => { setH(String(Math.floor(p / 60))); setM(String(p % 60)); }}
-            className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
-              (Number(h) || 0) * 60 + (Number(m) || 0) === p
-                ? 'bg-violet-500 text-white'
-                : 'bg-white text-violet-600 border border-violet-200 hover:border-violet-400'
-            }`}>
-            {fmtGoal(p)}
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-sm">
+      <div ref={ref}
+        className="w-full sm:w-96 bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl p-6 animate-[slideUp_0.22s_cubic-bezier(0.4,0,0.2,1)]">
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-base font-bold text-gray-800 flex items-center gap-2">
+            <Clock size={16} className="text-violet-500" /> 목표 시간 설정
+          </h3>
+          <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">
+            <X size={18} />
           </button>
-        ))}
+        </div>
+
+        {/* Presets */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          {GOAL_PRESETS.map(p => (
+            <button key={p}
+              onClick={() => { setH(String(Math.floor(p / 60))); setM(String(p % 60 === 0 ? '' : p % 60)); }}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                currentVal === p
+                  ? 'bg-violet-500 text-white shadow-sm'
+                  : 'bg-gray-100 text-gray-600 hover:bg-violet-100 hover:text-violet-700'
+              }`}>
+              {fmtGoal(p)}
+            </button>
+          ))}
+        </div>
+
+        {/* Custom input */}
+        <div className="flex items-center gap-3 mb-5 p-3 bg-gray-50 rounded-2xl">
+          <div className="flex items-center gap-1.5 flex-1">
+            <input type="number" min={0} max={23} value={h}
+              onChange={e => setH(e.target.value)} placeholder="0"
+              className="w-14 px-2 py-2 text-center text-sm font-medium border border-gray-200 bg-white rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-400" />
+            <span className="text-sm text-gray-500 font-medium">시간</span>
+          </div>
+          <span className="text-gray-300 font-bold">:</span>
+          <div className="flex items-center gap-1.5 flex-1">
+            <input type="number" min={0} max={59} value={m}
+              onChange={e => setM(e.target.value)} placeholder="0"
+              className="w-14 px-2 py-2 text-center text-sm font-medium border border-gray-200 bg-white rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-400" />
+            <span className="text-sm text-gray-500 font-medium">분</span>
+          </div>
+        </div>
+
+        {/* Buttons */}
+        <div className="flex gap-2">
+          {value !== undefined && (
+            <button onClick={() => { onSave(undefined); onClose(); }}
+              className="flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-2xl text-sm font-medium hover:bg-gray-200 transition-colors">
+              목표 삭제
+            </button>
+          )}
+          <button onClick={apply}
+            className="flex-1 py-2.5 bg-violet-600 text-white rounded-2xl text-sm font-semibold hover:bg-violet-700 transition-colors shadow-sm">
+            {currentVal > 0 ? `${fmtGoal(currentVal)} 설정` : '확인'}
+          </button>
+        </div>
       </div>
-      <div className="flex items-center gap-2">
-        <input type="number" min={0} max={23} value={h} onChange={e => setH(e.target.value)}
-          placeholder="0" className="w-12 px-2 py-1 text-sm text-center border border-violet-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-400" />
-        <span className="text-xs text-gray-500">시간</span>
-        <input type="number" min={0} max={59} value={m} onChange={e => setM(e.target.value)}
-          placeholder="0" className="w-12 px-2 py-1 text-sm text-center border border-violet-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-400" />
-        <span className="text-xs text-gray-500">분</span>
-        <button onClick={apply} className="ml-auto px-3 py-1 bg-violet-500 text-white text-xs rounded-xl hover:bg-violet-600 transition-colors">확인</button>
-        {value !== undefined && (
-          <button onClick={clear} className="px-3 py-1 bg-gray-200 text-gray-600 text-xs rounded-xl hover:bg-gray-300 transition-colors">삭제</button>
-        )}
-      </div>
+    </div>
+  );
+}
+
+/* ── Kebab menu ── */
+function KebabMenu({ onEditGoal, onDelete, hasGoal }: {
+  onEditGoal: () => void;
+  onDelete: () => void;
+  hasGoal: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative flex-shrink-0">
+      <button
+        onClick={e => { e.stopPropagation(); setOpen(v => !v); }}
+        className="p-1.5 rounded-lg text-gray-300 hover:text-gray-600 hover:bg-gray-100 transition-all opacity-0 group-hover:opacity-100"
+      >
+        <MoreVertical size={15} />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-8 z-30 w-40 bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 overflow-hidden
+          animate-[fadeIn_0.15s_cubic-bezier(0.4,0,0.2,1)]">
+          <button
+            onClick={() => { setOpen(false); onEditGoal(); }}
+            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-violet-50 hover:text-violet-700 transition-colors"
+          >
+            <Clock size={14} className="text-violet-400" />
+            {hasGoal ? '목표 시간 수정' : '목표 시간 설정'}
+          </button>
+          <div className="my-1 h-px bg-gray-100 mx-2" />
+          <button
+            onClick={() => { setOpen(false); onDelete(); }}
+            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
+          >
+            <Trash2 size={14} />
+            삭제
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -107,62 +202,60 @@ function TaskRow({ task, onToggle, onDelete, onUpdateGoal }: {
   onDelete: () => void;
   onUpdateGoal: (min: number | undefined) => void;
 }) {
-  const [showGoal, setShowGoal] = useState(false);
+  const [showGoalModal, setShowGoalModal] = useState(false);
   const c = catColor(task.category);
 
   return (
-    <div className={`group rounded-2xl transition-colors ${task.done ? 'opacity-50' : 'hover:bg-gray-50'}`}>
-      <div className="flex items-center gap-3 p-3">
+    <>
+      <div className={`group flex items-center gap-3 p-3 rounded-2xl transition-colors ${task.done ? 'opacity-50' : 'hover:bg-gray-50'}`}>
+        {/* Checkbox */}
         <button onClick={onToggle}
-          className={`flex-shrink-0 w-5 h-5 rounded-full border-2 transition-colors flex items-center justify-center ${
+          className={`flex-shrink-0 w-5 h-5 rounded-full border-2 transition-all flex items-center justify-center ${
             task.done ? 'bg-violet-500 border-violet-500' : 'border-gray-300 hover:border-violet-400'
           }`}>
           {task.done && <Check size={11} className="text-white" strokeWidth={3} />}
         </button>
 
+        {/* Category chip */}
         <span className={`flex-shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${c.bg} ${c.text}`}>
           {task.category}
         </span>
 
-        <span className={`flex-1 text-sm leading-snug ${task.done ? 'text-gray-400 line-through' : 'text-gray-700'}`}>
+        {/* Text */}
+        <span className={`flex-1 text-sm leading-snug min-w-0 truncate ${task.done ? 'text-gray-400 line-through' : 'text-gray-700'}`}>
           {task.text}
         </span>
 
-        {/* Goal badge */}
-        <button onClick={() => setShowGoal(v => !v)}
-          className={`flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-all ${
-            task.goalMinutes
-              ? 'bg-violet-100 text-violet-700 hover:bg-violet-200'
-              : 'text-gray-300 hover:text-violet-500 hover:bg-violet-50'
-          }`}>
-          <Clock size={11} />
-          {task.goalMinutes ? fmtGoal(task.goalMinutes) : '목표'}
-          {showGoal ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
-        </button>
+        {/* Goal badge (always visible if set) */}
+        {task.goalMinutes && (
+          <span className="flex-shrink-0 flex items-center gap-1 px-2 py-0.5 bg-violet-100 text-violet-700 rounded-full text-xs font-medium">
+            <Clock size={10} />{fmtGoal(task.goalMinutes)}
+          </span>
+        )}
 
-        <button onClick={onDelete}
-          className="opacity-0 group-hover:opacity-100 p-1 text-gray-300 hover:text-red-400 transition-all">
-          <Trash2 size={14} />
-        </button>
+        {/* Kebab */}
+        <KebabMenu
+          hasGoal={!!task.goalMinutes}
+          onEditGoal={() => setShowGoalModal(true)}
+          onDelete={onDelete}
+        />
       </div>
 
-      {showGoal && (
-        <div className="px-3 pb-3">
-          <GoalPicker
-            value={task.goalMinutes}
-            onChange={onUpdateGoal}
-            onClose={() => setShowGoal(false)}
-          />
-        </div>
+      {showGoalModal && (
+        <GoalModal
+          value={task.goalMinutes}
+          onSave={onUpdateGoal}
+          onClose={() => setShowGoalModal(false)}
+        />
       )}
-    </div>
+    </>
   );
 }
 
-/* ── Main ── */
+/* ── Main DailyPlanner ── */
 export function DailyPlanner() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [allData, setAllData]         = useState<Record<string, DayData>>(loadAll);
+  const [allData, setAllData]         = useState<Record<string, DayData>>(loadAllPlanner);
   const [newText, setNewText]         = useState('');
   const [newCat, setNewCat]           = useState('공부');
   const [filter, setFilter]           = useState('전체');
@@ -187,11 +280,11 @@ export function DailyPlanner() {
     inputRef.current?.focus();
   };
 
-  const toggleTask   = (id: string) => updateTasks(tasks.map(t => t.id === id ? { ...t, done: !t.done } : t));
-  const deleteTask   = (id: string) => updateTasks(tasks.filter(t => t.id !== id));
-  const updateGoal   = (id: string, min: number | undefined) =>
+  const toggleTask  = (id: string) => updateTasks(tasks.map(t => t.id === id ? { ...t, done: !t.done } : t));
+  const deleteTask  = (id: string) => updateTasks(tasks.filter(t => t.id !== id));
+  const updateGoal  = (id: string, min: number | undefined) =>
     updateTasks(tasks.map(t => t.id === id ? { ...t, goalMinutes: min } : t));
-  const clearDone    = () => updateTasks(tasks.filter(t => !t.done));
+  const clearDone   = () => updateTasks(tasks.filter(t => !t.done));
 
   const goDay   = (d: number) => { const nd = new Date(currentDate); nd.setDate(nd.getDate() + d); setCurrentDate(nd); };
   const isToday = toDateKey(currentDate) === toDateKey(new Date());
@@ -224,7 +317,6 @@ export function DailyPlanner() {
           )}
         </div>
 
-        {/* Date nav */}
         <div className="flex items-center justify-between">
           <button onClick={() => goDay(-1)} className="p-1.5 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
             <ChevronLeft size={18} />
@@ -242,7 +334,6 @@ export function DailyPlanner() {
           </button>
         </div>
 
-        {/* Progress */}
         {totalCount > 0 && (
           <div className="mt-4">
             <div className="flex justify-between items-center mb-1.5">
@@ -264,7 +355,7 @@ export function DailyPlanner() {
         )}
       </div>
 
-      {/* Add */}
+      {/* Add task */}
       <div className="px-6 py-4 border-b border-gray-50 bg-gray-50/50">
         <div className="flex gap-2 mb-2 flex-wrap">
           {CATEGORIES.map(cat => {
@@ -343,21 +434,21 @@ export function DailyPlanner() {
         ))}
       </div>
 
-      {/* Footer */}
+      {/* Footer summary */}
       {totalCount > 0 && (
         <div className="px-6 pb-5">
           <div className="flex gap-2 flex-wrap">
             {CATEGORIES.map(cat => {
-              const catTasks = tasks.filter(t => t.category === cat);
-              if (!catTasks.length) return null;
+              const ct = tasks.filter(t => t.category === cat);
+              if (!ct.length) return null;
               const c = catColor(cat);
-              const doneCat  = catTasks.filter(t => t.done).length;
-              const goalMin  = catTasks.reduce((s, t) => s + (t.goalMinutes ?? 0), 0);
+              const dc = ct.filter(t => t.done).length;
+              const gm = ct.reduce((s, t) => s + (t.goalMinutes ?? 0), 0);
               return (
                 <div key={cat} className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs ${c.bg} ${c.text}`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`} />
-                  {cat} {doneCat}/{catTasks.length}
-                  {goalMin > 0 && <span className="opacity-60">· {fmtGoal(goalMin)}</span>}
+                  {cat} {dc}/{ct.length}
+                  {gm > 0 && <span className="opacity-60">· {fmtGoal(gm)}</span>}
                 </div>
               );
             })}
