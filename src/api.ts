@@ -2,17 +2,20 @@ export interface User {
   uid: string;
   email: string;
   nickname: string;
+  grade?: number; // 1 | 2 | 3
   totalTime: number;
   subjectStats?: Record<string, number>;
 }
 
 export interface LeaderboardEntry {
   nickname: string;
+  grade?: number;
   totalTime: number;
 }
 
 export interface ActiveUser {
   nickname: string;
+  grade?: number;
   subject: string;
   emoji: string;
   startTime: number;
@@ -126,6 +129,18 @@ export const api = {
     const data = await res.json();
     if (!data.success) throw new Error(data.error);
     return data.activeUsers;
+  },
+
+  async setGrade(token: string, grade: number): Promise<void> {
+    if (!GAS_URL) {
+      if (mockUser) (mockUser as any).grade = grade;
+      return;
+    }
+    await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'setGrade', token, grade }),
+    });
   },
 
   async setActive(token: string, subject: string, emoji: string, startTime: number | null): Promise<void> {
