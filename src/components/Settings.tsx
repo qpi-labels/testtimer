@@ -5,12 +5,18 @@ import { api, User } from '../api';
 interface SettingsProps {
   user: User;
   token: string;
-  onUpdate: (nickname: string, grade?: number) => void;
+  onUpdate: (nickname: string) => void;
 }
 
+
+// 스프레드시트 인젝션 방지 + 길이 제한
+function sanitize(value: string, maxLen = 10): string {
+  let v = value.replace(/[\r\n\t\x00-\x1F\x7F]/g, '');
+  v = v.replace(/^[=+\-@/]+/, '');
+  return [...v].slice(0, maxLen).join('');
+}
 export function Settings({ user, token, onUpdate }: SettingsProps) {
   const [nickname, setNickname] = useState(user.nickname);
-  const [grade, setGrade]       = useState<number>(user.grade ?? 0);
   const [saving, setSaving]     = useState(false);
 
   const handleSave = async () => {
@@ -18,9 +24,8 @@ export function Settings({ user, token, onUpdate }: SettingsProps) {
     setSaving(true);
     try {
       const newNickname = await api.setNickname(token, nickname);
-      if (grade > 0) await api.setGrade(token, grade);
-      onUpdate(newNickname, grade > 0 ? grade : undefined);
-      alert('저장되었습니다.');
+      onUpdate(newNickname);
+      alert('닉네임이 변경되었습니다.');
     } catch (err: any) {
       alert('변경 실패: ' + err.message);
     } finally {
@@ -49,32 +54,13 @@ export function Settings({ user, token, onUpdate }: SettingsProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">학년</label>
-            <div className="flex gap-2">
-              {[0, 1, 2, 3].map(g => (
-                <button
-                  key={g}
-                  onClick={() => setGrade(g)}
-                  className={`flex-1 py-2 rounded-xl text-sm font-medium border transition-all ${
-                    grade === g
-                      ? 'bg-indigo-600 text-white border-indigo-600'
-                      : 'bg-white text-gray-500 border-gray-200 hover:border-indigo-300 hover:text-indigo-500'
-                  }`}
-                >
-                  {g === 0 ? '미설정' : `${g}학년`}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">닉네임</label>
             <div className="flex space-x-2">
               <div className="relative flex-1">
                 <input
                   type="text"
                   value={nickname}
-                  onChange={e => setNickname(e.target.value)}
+                  onChange={e => setNickname(sanitize(e.target.value, 10))}
                   maxLength={10}
                   className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow pr-14"
                   placeholder="닉네임을 입력하세요"
@@ -87,7 +73,7 @@ export function Settings({ user, token, onUpdate }: SettingsProps) {
               </div>
               <button
                 onClick={handleSave}
-                disabled={saving || (nickname === user.nickname && grade === (user.grade ?? 0))}
+                disabled={saving || nickname === user.nickname}
                 className="px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-colors flex items-center"
               >
                 <Save size={18} className="mr-1" /> 저장
