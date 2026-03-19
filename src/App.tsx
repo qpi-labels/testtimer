@@ -1,65 +1,44 @@
 import React, { useState, useEffect } from 'react';
-import { api, User, LeaderboardEntry } from './api';
+import { api, User } from './api';
 import { Login } from './components/Login';
 import { Timer } from './components/Timer';
 import { Leaderboard } from './components/Leaderboard';
 import { Settings } from './components/Settings';
-import { LogOut, User as UserIcon, Trophy, Users } from 'lucide-react';
-import { auth, onAuthStateChanged } from './firebase';
+import { LogOut, User as UserIcon } from 'lucide-react';
 
 export default function App() {
+  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [view, setView] = useState<'timer' | 'settings'>('timer');
-  const [currentlyStudying, setCurrentlyStudying] = useState<LeaderboardEntry[]>([]);
 
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        try {
-          // We don't call api.login here because that's for the initial popup login
-          // Instead, we just fetch the user data if they are already logged in
-          const userData = await api.login(); // This handles both new and existing users
-          setUser(userData);
-        } catch (err) {
-          console.error('Auth state change error:', err);
-        }
-      } else {
-        setUser(null);
-      }
-      setLoading(false);
-    });
-
-    const unsubscribeStudying = api.subscribeCurrentlyStudying((entries) => {
-      setCurrentlyStudying(entries);
-    });
-
-    return () => {
-      unsubscribeAuth();
-      unsubscribeStudying();
-    };
+    const initialToken = localStorage.getItem('token');
+    if (initialToken && !user) {
+      handleLogin(initialToken);
+    }
   }, []);
 
-  const handleLogin = async () => {
+  const handleLogin = async (credential: string) => {
     setLoading(true);
     try {
-      const userData = await api.login();
+      const userData = await api.login(credential);
       setUser(userData);
+      setToken(credential);
+      localStorage.setItem('token', credential);
     } catch (err) {
       console.error(err);
       alert('로그인 실패. 다시 시도해주세요.');
+      handleLogout();
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await auth.signOut();
-      setUser(null);
-    } catch (err) {
-      console.error('Logout error:', err);
-    }
+  const handleLogout = () => {
+    setToken(null);
+    setUser(null);
+    localStorage.removeItem('token');
   };
 
   if (loading) {
@@ -70,7 +49,7 @@ export default function App() {
     );
   }
 
-  if (!user) {
+  if (!token || !user) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="w-full max-w-md">
@@ -90,6 +69,7 @@ export default function App() {
             <p className="text-gray-500 mb-6">사용하실 닉네임을 설정해주세요.</p>
             <Settings 
               user={user} 
+              token={token} 
               onUpdate={(nickname) => setUser({ ...user, nickname })} 
             />
           </div>
@@ -126,12 +106,13 @@ export default function App() {
           <div className="md:col-span-7 space-y-8">
             {view === 'timer' ? (
               <Timer 
-                user={user} 
+                token={token} 
                 onLogAdded={(totalTime) => setUser({ ...user, totalTime })} 
               />
             ) : (
               <Settings 
                 user={user} 
+                token={token} 
                 onUpdate={(nickname) => setUser({ ...user, nickname })} 
               />
             )}
@@ -147,29 +128,6 @@ export default function App() {
                 <Trophy size={32} />
               </div>
             </div>
-
-            {/* Currently Studying Section */}
-            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
-              <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                <Users className="mr-2 text-indigo-500" size={20} />
-                지금 공부 중인 사람들 ({currentlyStudying.length})
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {currentlyStudying.length === 0 ? (
-                  <p className="text-gray-400 text-sm">지금은 공부 중인 사람이 없어요.</p>
-                ) : (
-                  currentlyStudying.map((entry) => (
-                    <div 
-                      key={entry.uid} 
-                      className="px-3 py-1 bg-green-50 text-green-700 rounded-full text-sm font-medium border border-green-100 flex items-center"
-                    >
-                      <span className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
-                      {entry.nickname}
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
           </div>
 
           <div className="md:col-span-5">
@@ -178,5 +136,18 @@ export default function App() {
         </div>
       </main>
     </div>
+  );
+}
+
+function Trophy({ size }: { size: number }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+      <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+      <path d="M4 22h16"></path>
+      <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
+      <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
+      <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
+    </svg>
   );
 }
