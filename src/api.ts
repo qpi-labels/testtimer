@@ -143,6 +143,22 @@ export const api = {
     });
   },
 
+
+  async getDailyStats(token: string): Promise<{ totalTime: number; subjectStats: Record<string, number> }> {
+    if (!GAS_URL) {
+      // mock: 오늘 공부시간 없음 (mock은 세션 내 addLog 이후 반영)
+      return { totalTime: 0, subjectStats: {} };
+    }
+    const res  = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'getDailyStats', token }),
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    return { totalTime: data.totalTime || 0, subjectStats: data.subjectStats || {} };
+  },
+
   async setActive(token: string, subject: string, emoji: string, startTime: number | null, nickname?: string, grade?: number): Promise<void> {
     if (!GAS_URL) {
       if (startTime && mockUser?.nickname) {
