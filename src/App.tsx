@@ -177,7 +177,7 @@ export default function App() {
       <div className="w-full max-w-md bg-white p-8 rounded-3xl shadow-sm border border-gray-100 text-center">
         <h2 className="text-2xl font-bold text-gray-800 mb-2">환영합니다!</h2>
         <p className="text-gray-500 mb-6">사용하실 닉네임을 설정해주세요.</p>
-        <Settings user={user} token={token} onUpdate={n => setUser({ ...user, nickname: n })} />
+        <Settings user={user} token={token} onUpdate={(n, g) => setUser({ ...user, nickname: n, grade: g })} />
       </div>
     </div>
   );
@@ -188,7 +188,7 @@ export default function App() {
       {/* ── Header ── */}
       <header className="bg-white border-b border-gray-100 sticky top-0 z-20">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
-          <h1 className="text-xl font-bold text-indigo-600 tracking-tight flex-shrink-0">충곽 타이머</h1>
+          <h1 className="text-xl font-bold text-indigo-600 tracking-tight flex-shrink-0">StudyTimer</h1>
           <TabNav tab={tab} setTab={setTab} />
           <div className="flex items-center gap-3 flex-shrink-0">
             <span className="text-sm font-medium text-gray-600 hidden sm:block">{user.nickname}</span>
@@ -253,7 +253,7 @@ export default function App() {
         {/* ── SETTINGS TAB ── */}
         {tab === 'settings' && (
           <div className="max-w-lg mx-auto">
-            <Settings user={user} token={token} onUpdate={n => setUser({ ...user, nickname: n })} />
+            <Settings user={user} token={token} onUpdate={(n, g) => setUser({ ...user, nickname: n, grade: g })} />
           </div>
         )}
       </main>
