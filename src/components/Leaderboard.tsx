@@ -94,6 +94,9 @@ export function Leaderboard() {
                   {idx < 3 ? ['🥇','🥈','🥉'][idx] : idx + 1}
                 </span>
                 <span className="font-medium text-gray-800 text-sm">{entry.nickname}</span>
+                {entry.grade && (
+                  <span className="text-[10px] font-bold text-gray-400">{entry.grade}학년</span>
+                )}
               </div>
               <span className="text-indigo-600 font-semibold text-sm">
                 {formatTime(entry.totalTime)}
