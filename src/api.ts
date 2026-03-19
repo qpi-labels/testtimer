@@ -14,6 +14,7 @@ export interface LeaderboardEntry {
 export interface ActiveUser {
   nickname: string;
   subject: string;
+  emoji: string;
   startTime: number;
 }
 
@@ -30,8 +31,8 @@ const mockLeaderboardBase: LeaderboardEntry[] = [
   { nickname: 'Newbie',      totalTime: 5   * 60 * 60 * 1000 },
 ];
 let mockActiveUsers: ActiveUser[] = [
-  { nickname: 'StudyKing',   subject: '수학', startTime: Date.now() - 45 * 60 * 1000 },
-  { nickname: 'FocusMaster', subject: '영어', startTime: Date.now() - 12 * 60 * 1000 },
+  { nickname: 'StudyKing',   subject: '수학', emoji: '📐', startTime: Date.now() - 45 * 60 * 1000 },
+  { nickname: 'FocusMaster', subject: '영어', emoji: '✏️', startTime: Date.now() - 12 * 60 * 1000 },
 ];
 
 // period별 mock 배율
@@ -127,11 +128,11 @@ export const api = {
     return data.activeUsers;
   },
 
-  async setActive(token: string, subject: string, startTime: number | null): Promise<void> {
+  async setActive(token: string, subject: string, emoji: string, startTime: number | null): Promise<void> {
     if (!GAS_URL) {
       if (startTime && mockUser?.nickname) {
         const idx = mockActiveUsers.findIndex(u => u.nickname === mockUser?.nickname);
-        const entry = { nickname: mockUser.nickname, subject, startTime };
+        const entry = { nickname: mockUser.nickname, subject, emoji, startTime };
         if (idx >= 0) mockActiveUsers[idx] = entry;
         else mockActiveUsers.push(entry);
       } else if (mockUser?.nickname) {
@@ -142,7 +143,7 @@ export const api = {
     await fetch(GAS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'setActive', token, subject, startTime }),
+      body: JSON.stringify({ action: 'setActive', token, subject, emoji, startTime }),
     });
   },
 };
