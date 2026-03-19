@@ -205,7 +205,7 @@ export default function App() {
         {tab === 'timer' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-8 space-y-6">
-              <Timer token={token} onLogAdded={handleLogAdded} />
+              <Timer token={token} nickname={user.nickname} grade={user.grade} onLogAdded={handleLogAdded} />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="bg-indigo-50 rounded-3xl p-6 border border-indigo-100 flex items-center justify-between">
