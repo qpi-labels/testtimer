@@ -100,7 +100,7 @@ export function Settings({ user, token, onUpdate }: SettingsProps) {
             <span className="text-xs text-gray-400 font-medium w-28 flex-shrink-0" />
             <div className="flex items-center gap-2">
               <img
-                src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Google_Gemini_logo.svg/512px-Google_Gemini_logo.svg.png"
+                src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Google_Gemini_icon_2025.svg"
                 alt="Google Gemini"
                 className="h-4 w-4 object-contain"
               />
