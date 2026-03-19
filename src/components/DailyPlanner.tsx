@@ -4,6 +4,13 @@ import {
   ClipboardList, Clock, MoreVertical, X,
 } from 'lucide-react';
 
+
+// 스프레드시트 인젝션 방지 + 길이 제한
+function sanitize(value: string, maxLen = 10): string {
+  let v = value.replace(/[\r\n\t\x00-\x1F\x7F]/g, '');
+  v = v.replace(/^[=+\-@/]+/, '');
+  return [...v].slice(0, maxLen).join('');
+}
 export interface Task {
   id: string;
   text: string;
@@ -113,14 +120,14 @@ function GoalModal({ value, onSave, onClose }: {
         <div className="flex items-center gap-3 mb-5 p-3 bg-gray-50 rounded-2xl">
           <div className="flex items-center gap-1.5 flex-1">
             <input type="number" min={0} max={23} value={h}
-              onChange={e => setH(e.target.value)} placeholder="0"
+              onChange={e => setH(e.target.value.replace(/[^0-9]/g, '').slice(0, 2))} placeholder="0"
               className="w-14 px-2 py-2 text-center text-sm font-medium border border-gray-200 bg-white rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-400" />
             <span className="text-sm text-gray-500 font-medium">시간</span>
           </div>
           <span className="text-gray-300 font-bold">:</span>
           <div className="flex items-center gap-1.5 flex-1">
             <input type="number" min={0} max={59} value={m}
-              onChange={e => setM(e.target.value)} placeholder="0"
+              onChange={e => setM(e.target.value.replace(/[^0-9]/g, '').slice(0, 2))} placeholder="0"
               className="w-14 px-2 py-2 text-center text-sm font-medium border border-gray-200 bg-white rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-400" />
             <span className="text-sm text-gray-500 font-medium">분</span>
           </div>
@@ -371,9 +378,9 @@ export function DailyPlanner() {
           })}
         </div>
         <div className="flex gap-2">
-          <input ref={inputRef} value={newText} onChange={e => setNewText(e.target.value)}
+          <input ref={inputRef} value={newText} onChange={e => setNewText(sanitize(e.target.value, 10))}
             onKeyDown={e => { if (e.key === 'Enter') addTask(); }}
-            placeholder="할 일을 입력하세요..."
+            maxLength={15} placeholder="할 일을 입력하세요... (10자)"
             className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent transition-shadow" />
           <button onClick={addTask} disabled={!newText.trim()}
             className="px-4 py-2.5 bg-violet-600 text-white rounded-xl hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95 flex items-center gap-1.5 text-sm font-medium">
