@@ -34,8 +34,6 @@ function loadSubjects(): Subject[] {
   } catch { return DEFAULT_SUBJECTS; }
 }
 
-const EMOJI_SUGGESTIONS = ['📖','📐','✏️','🔬','📝','🎵','🏃','💻','🌍','🎨','📊','🧮','💡','🏆','⚗️'];
-
 export function Timer({ token, onLogAdded }: TimerProps) {
   const [subjects, setSubjects]     = useState<Subject[]>(loadSubjects);
   const [subject, setSubject]       = useState<Subject>(subjects[0] || DEFAULT_SUBJECTS[0]);
@@ -186,38 +184,27 @@ export function Timer({ token, onLogAdded }: TimerProps) {
         {/* Inline add form */}
         {showAdd && !isRunning && (
           <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 mb-2 space-y-3">
-            {/* Emoji suggestions */}
+            {/* Emoji input */}
             <div>
-              <p className="text-xs text-gray-400 mb-2 font-medium">이모지 선택</p>
-              <div className="flex flex-wrap gap-1.5">
-                {EMOJI_SUGGESTIONS.map(e => (
-                  <button
-                    key={e}
-                    onClick={() => setNewEmoji(e)}
-                    className={`w-8 h-8 rounded-xl text-base flex items-center justify-center transition-all ${
-                      newEmoji === e
-                        ? 'bg-indigo-100 ring-2 ring-indigo-400 scale-110'
-                        : 'bg-white hover:bg-gray-100 border border-gray-200'
-                    }`}
-                  >
-                    {e}
-                  </button>
-                ))}
-                {/* Custom emoji input */}
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={newEmoji}
-                    onChange={e => {
-                      // take last character (emoji)
-                      const val = [...e.target.value].slice(-1).join('');
-                      if (val) setNewEmoji(val);
-                    }}
-                    className="w-8 h-8 rounded-xl text-center text-base border-2 border-dashed border-gray-300 hover:border-indigo-400 focus:border-indigo-400 focus:outline-none bg-white"
-                    title="직접 입력"
-                  />
-                </div>
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="text-xs text-gray-400 font-medium">이모지</p>
+                <p className="text-[11px] text-gray-300">
+                  <span className="font-semibold text-gray-400">Win</span> + .&nbsp;&nbsp;
+                  <span className="font-semibold text-gray-400">Mac</span> ⌘+Ctrl+Space&nbsp;&nbsp;
+                  모바일은 이모지 키보드
+                </p>
               </div>
+              <input
+                type="text"
+                value={newEmoji}
+                onChange={e => {
+                  const chars = [...e.target.value];
+                  const val = chars.slice(-2).join('');
+                  if (val) setNewEmoji(val);
+                }}
+                placeholder="😀"
+                className="w-full px-4 py-2.5 text-2xl text-center bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-transparent outline-none transition-shadow"
+              />
             </div>
 
             {/* Name input */}
