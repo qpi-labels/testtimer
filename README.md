@@ -1,2 +1,6 @@
 # 충곽 타이머
-#### Developed by QPI, Enhanced by Google Gemini
+Developed by QPI<br>
+Enhanced with Claude | Google Gemini<br>
+Secured by Cloudflare
+
+
