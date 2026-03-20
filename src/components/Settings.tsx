@@ -15,9 +15,12 @@ function sanitize(value: string, maxLen = 10): string {
   v = v.replace(/^[=+\-@/]+/, '');
   return [...v].slice(0, maxLen).join('');
 }
-export function Settings({ user, token, onUpdate }: SettingsProps) {
+export function Settings({ user, token, onUpdate, onWithdraw }: SettingsProps) {
   const [nickname, setNickname] = useState(user.nickname);
-  const [saving, setSaving]     = useState(false);
+  const [saving, setSaving]       = useState(false);
+  const [showWithdraw, setShowWithdraw] = useState(false);
+  const [withdrawEmail, setWithdrawEmail] = useState('');
+  const [withdrawing, setWithdrawing] = useState(false);
 
   const handleSave = async () => {
     if (!nickname.trim()) return alert('닉네임을 입력해주세요.');
@@ -30,6 +33,23 @@ export function Settings({ user, token, onUpdate }: SettingsProps) {
       alert('변경 실패: ' + err.message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleWithdraw = async () => {
+    if (!withdrawEmail.trim()) return alert('이메일을 입력해주세요.');
+    if (withdrawEmail.trim().toLowerCase() !== user.email.toLowerCase())
+      return alert('이메일이 일치하지 않습니다.');
+    if (!confirm('정말 탈퇴하시겠습니까? 모든 공부 기록이 영구 삭제됩니다.')) return;
+    setWithdrawing(true);
+    try {
+      await api.withdraw(token, withdrawEmail.trim());
+      alert('탈퇴가 완료되었습니다.');
+      onWithdraw();
+    } catch (err: any) {
+      alert('탈퇴 실패: ' + err.message);
+    } finally {
+      setWithdrawing(false);
     }
   };
 
@@ -81,6 +101,48 @@ export function Settings({ user, token, onUpdate }: SettingsProps) {
             </div>
           </div>
         </div>
+      </div>
+
+
+      {/* ── 탈퇴 카드 ── */}
+      <div className="bg-white rounded-3xl shadow-sm border border-red-100 p-6">
+        <h3 className="text-base font-bold text-red-500 mb-1">계정 탈퇴</h3>
+        <p className="text-sm text-gray-400 mb-4">탈퇴 시 모든 공부 기록이 영구 삭제됩니다.</p>
+
+        {!showWithdraw ? (
+          <button
+            onClick={() => setShowWithdraw(true)}
+            className="px-4 py-2 text-sm font-medium text-red-500 border border-red-200 rounded-xl hover:bg-red-50 transition-colors"
+          >
+            탈퇴하기
+          </button>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-sm text-gray-600">본인 확인을 위해 가입한 이메일 주소를 입력하세요.</p>
+            <input
+              type="text"
+              value={withdrawEmail}
+              onChange={e => setWithdrawEmail(e.target.value)}
+              placeholder={user.email}
+              className="w-full px-4 py-2 border border-red-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-400 focus:border-transparent"
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={handleWithdraw}
+                disabled={withdrawing}
+                className="px-4 py-2 bg-red-500 text-white text-sm font-medium rounded-xl hover:bg-red-600 disabled:opacity-50 transition-colors"
+              >
+                {withdrawing ? '처리 중...' : '탈퇴 확인'}
+              </button>
+              <button
+                onClick={() => { setShowWithdraw(false); setWithdrawEmail(''); }}
+                className="px-4 py-2 bg-gray-100 text-gray-600 text-sm font-medium rounded-xl hover:bg-gray-200 transition-colors"
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Credits card ── */}
