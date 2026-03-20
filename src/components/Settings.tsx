@@ -149,7 +149,7 @@ export function Settings({ user, token, onUpdate, onWithdraw }: SettingsProps) {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-400 font-medium w-28 flex-shrink-0">Developed by</span>
-            <span className="text-sm font-semibold text-gray-700">2026 QPI</span>
+            <span className="text-sm font-semibold text-gray-700">2026 충남과학고 쿼터파이</span>
           </div>
           <div className="h-px bg-gray-100" />
           <div className="flex items-center justify-between">
