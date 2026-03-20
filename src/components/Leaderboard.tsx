@@ -122,7 +122,7 @@ export function Leaderboard() {
               className={`flex items-center justify-between p-3 rounded-2xl border ${wrap}`}>
               <div className="flex items-center gap-3">
                 <span className={`font-bold w-6 text-center text-sm ${rank}`}>
-                  {idx < 3 ? ['🥇','🥈','🥉'][idx] : idx + 1}
+                  {idx < 3 ? <span className="tossface">{['🥇','🥈','🥉'][idx]}</span> : idx + 1}
                 </span>
                 <div className="flex items-center gap-1.5">
                   <span className="font-medium text-gray-800 text-sm">{entry.nickname}</span>
