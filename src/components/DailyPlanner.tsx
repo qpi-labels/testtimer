@@ -411,7 +411,7 @@ export function DailyPlanner() {
       <div className="px-6 py-4 space-y-1 max-h-[32rem] overflow-y-auto">
         {filtered.length === 0 && (
           <div className="text-center py-10">
-            <p className="text-3xl mb-2">📋</p>
+            <p className="text-3xl mb-2 tossface">📋</p>
             <p className="text-sm text-gray-400">
               {filter === '전체' ? '할 일을 추가해보세요!' : `${filter} 항목이 없습니다.`}
             </p>
