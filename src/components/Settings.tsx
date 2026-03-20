@@ -182,7 +182,7 @@ export function Settings({ user, token, onUpdate, onWithdraw }: SettingsProps) {
             </div>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-400 font-medium w-28 flex-shrink-0">Secured by</span>
+            <span className="text-xs text-gray-400 font-medium w-28 flex-shrink-0" />
             <div className="flex items-center gap-2">
               <img src="https://www.svgrepo.com/show/353564/cloudflare.svg" alt="Cloudflare" className="h-4 w-auto object-contain" />
               <span className="text-sm font-semibold text-gray-700">Cloudflare Workers</span>
