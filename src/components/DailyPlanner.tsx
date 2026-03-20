@@ -398,6 +398,27 @@ export function DailyPlanner({ timerElapsed }: DailyPlannerProps = {}) {
   const dateKey = toDateKey(currentDate);
   const tasks   = (allData[dateKey] ?? { tasks: [] }).tasks;
 
+  const [memos, setMemos] = useState<Record<string, string>>(() => {
+    try { const r = localStorage.getItem('dailyMemo_v1'); return r ? JSON.parse(r) : {}; }
+    catch { return {}; }
+  });
+  const currentMemo = memos[dateKey] ?? '';
+  const updateMemo = (text: string) => {
+    setMemos(prev => {
+      const next = { ...prev, [dateKey]: text };
+      localStorage.setItem('dailyMemo_v1', JSON.stringify(next));
+      return next;
+    });
+  };
+
+  const [dailyStudy, setDailyStudy] = useState<Record<string, number>>({});
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('dailyStudyTime');
+      if (saved) setDailyStudy(JSON.parse(saved));
+    } catch {}
+  }, [dateKey, timerElapsed]);
+
   useEffect(() => { saveAll(allData); }, [allData]);
 
   // 타이머 elapsed 변화 감지 → 실제 시간 누적
@@ -434,6 +455,8 @@ export function DailyPlanner({ timerElapsed }: DailyPlannerProps = {}) {
   const deleteTask  = (id: string) => updateTasks(tasks.filter(t => t.id !== id));
   const updateGoal  = (id: string, min: number | undefined) =>
     updateTasks(tasks.map(t => t.id === id ? { ...t, goalMinutes: min } : t));
+  const updateSubject = (id: string, name: string | undefined) =>
+    updateTasks(tasks.map(t => t.id === id ? { ...t, subjectName: name } : t));
   const clearDone   = () => updateTasks(tasks.filter(t => !t.done));
 
   const goDay   = (d: number) => { const nd = new Date(currentDate); nd.setDate(nd.getDate() + d); setCurrentDate(nd); };
@@ -446,6 +469,8 @@ export function DailyPlanner({ timerElapsed }: DailyPlannerProps = {}) {
   const doneCount  = tasks.filter(t => t.done).length;
   const totalCount = tasks.length;
   const progress   = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+
+  const totalStudyMs = (dailyStudy[dateKey] || 0) + (isToday && timerElapsed ? timerElapsed.ms : 0);
 
   const totalGoalMin = tasks.reduce((s, t) => s + (t.goalMinutes ?? 0), 0);
   const doneGoalMin  = tasks.filter(t => t.done).reduce((s, t) => s + (t.goalMinutes ?? 0), 0);
@@ -473,11 +498,18 @@ export function DailyPlanner({ timerElapsed }: DailyPlannerProps = {}) {
           </button>
           <div className="text-center">
             <p className="text-sm font-bold text-gray-800">{fmtDateFull(currentDate)}</p>
-            {label && (
-              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${isToday ? 'bg-violet-100 text-violet-600' : 'bg-gray-100 text-gray-500'}`}>
-                {label}
-              </span>
-            )}
+            <div className="flex items-center justify-center gap-1.5 mt-1">
+              {label && (
+                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${isToday ? 'bg-violet-100 text-violet-600' : 'bg-gray-100 text-gray-500'}`}>
+                  {label}
+                </span>
+              )}
+              {totalStudyMs > 0 && (
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                  공부: {fmtMs(totalStudyMs)}
+                </span>
+              )}
+            </div>
           </div>
           <button onClick={() => goDay(1)} className="p-1.5 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors">
             <ChevronRight size={18} />
@@ -503,6 +535,16 @@ export function DailyPlanner({ timerElapsed }: DailyPlannerProps = {}) {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Daily Memo */}
+      <div className="px-6 py-4 border-b border-gray-50 bg-amber-50/20">
+        <textarea
+          value={currentMemo}
+          onChange={e => updateMemo(e.target.value)}
+          placeholder="오늘의 메모를 남겨보세요..."
+          className="w-full h-20 p-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-400 resize-none transition-shadow"
+        />
       </div>
 
       {/* Add task */}

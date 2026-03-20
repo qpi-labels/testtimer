@@ -3,7 +3,7 @@ import {
   BarChart2, ChevronLeft, ChevronRight,
   TrendingUp, Calendar, Award, Flame,
 } from 'lucide-react';
-import { loadAllPlanner, toDateKey, catColor, fmtGoal } from './DailyPlanner';
+import { loadAllPlanner, toDateKey, catColor, fmtGoal, fmtMs } from './DailyPlanner';
 
 interface StatisticsProps {
   subjectStats: Record<string, number>; // cumulative from server
@@ -44,14 +44,27 @@ function buildPlannerStats(allData: Record<string, any>) {
 }
 
 /* ── Heatmap cell ── */
-function HeatCell({ count, total }: { count: number; total: number }) {
-  const ratio = total > 0 ? count / total : 0;
-  const bg =
-    ratio === 0 ? 'bg-gray-100' :
-    ratio < 0.34 ? 'bg-violet-200' :
-    ratio < 0.67 ? 'bg-violet-400' :
-    'bg-violet-600';
-  return <div className={`w-4 h-4 rounded-sm ${bg} transition-colors`} title={`${count}/${total}`} />;
+function getHeatColor(ms: number) {
+  const hours = ms / 3600000;
+  if (hours <= 0) return 'bg-gray-100';
+  if (hours <= 1) return 'bg-emerald-100';
+  if (hours <= 2) return 'bg-emerald-200';
+  if (hours <= 3) return 'bg-emerald-300';
+  if (hours <= 4) return 'bg-emerald-400';
+  if (hours <= 5) return 'bg-emerald-500';
+  if (hours <= 6) return 'bg-emerald-600';
+  if (hours <= 7) return 'bg-emerald-700';
+  if (hours <= 8) return 'bg-emerald-800';
+  if (hours <= 9) return 'bg-emerald-900';
+  return 'bg-emerald-900';
+}
+
+function HeatCell({ count, total, studyMs = 0 }: { count: number; total: number; studyMs?: number }) {
+  const titleText = studyMs > 0 
+    ? `공부 시간: ${fmtMs(studyMs)}\n할 일: ${count}/${total}` 
+    : `할 일: ${count}/${total}`;
+  const bg = getHeatColor(studyMs);
+  return <div className={`w-4 h-4 rounded-sm ${bg} transition-colors`} title={titleText} />;
 }
 
 /* ── Bar ── */
@@ -88,6 +101,14 @@ export function Statistics({ subjectStats, totalTime }: StatisticsProps) {
 
   const allPlannerData = useMemo(() => loadAllPlanner(), []);
   const plannerStats   = useMemo(() => buildPlannerStats(allPlannerData), [allPlannerData]);
+
+  const [dailyStudy, setDailyStudy] = useState<Record<string, number>>({});
+  React.useEffect(() => {
+    try {
+      const saved = localStorage.getItem('dailyStudyTime');
+      if (saved) setDailyStudy(JSON.parse(saved));
+    } catch {}
+  }, []);
 
   // ── Monthly view: one bar per day of the month ──
   const monthDays = daysInMonth(year, month);
@@ -400,19 +421,20 @@ export function Statistics({ subjectStats, totalTime }: StatisticsProps) {
                   {Array.from({ length: days }, (_, d) => {
                     const key = `${mk}-${padZero(d + 1)}`;
                     const s = plannerStats[key] ?? { total: 0, done: 0 };
-                    return <HeatCell key={d} count={s.done} total={s.total} />;
+                    const studyMs = dailyStudy[key] || 0;
+                    return <HeatCell key={d} count={s.done} total={s.total} studyMs={studyMs} />;
                   })}
                 </div>
               </div>
             );
           })}
         </div>
-        <div className="flex items-center gap-2 mt-4 justify-end">
-          <span className="text-xs text-gray-400">적음</span>
-          {['bg-gray-100','bg-violet-200','bg-violet-400','bg-violet-600'].map(c => (
+        <div className="flex items-center gap-2 mt-4 justify-end flex-wrap">
+          <span className="text-xs text-gray-400">0h</span>
+          {['bg-gray-100','bg-emerald-100','bg-emerald-200','bg-emerald-300','bg-emerald-400','bg-emerald-500','bg-emerald-600','bg-emerald-700','bg-emerald-800','bg-emerald-900'].map(c => (
             <div key={c} className={`w-4 h-4 rounded-sm ${c}`} />
           ))}
-          <span className="text-xs text-gray-400">많음</span>
+          <span className="text-xs text-gray-400">10h+</span>
         </div>
       </div>
     </div>

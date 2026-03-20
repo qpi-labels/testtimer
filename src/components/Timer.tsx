@@ -127,6 +127,14 @@ export function Timer({ token, nickname, grade, onLogAdded, onElapsedChange }: T
     if (durationMs > 7 * 60 * 60 * 1000) { alert('부정행위 방지: 7시간을 초과하는 기록은 저장되지 않습니다.'); return; }
 
     try {
+      const todayKey = new Date().toISOString().slice(0, 10);
+      const savedStats = localStorage.getItem('dailyStudyTime');
+      const dailyStats = savedStats ? JSON.parse(savedStats) : {};
+      dailyStats[todayKey] = (dailyStats[todayKey] || 0) + durationMs;
+      localStorage.setItem('dailyStudyTime', JSON.stringify(dailyStats));
+    } catch (e) { console.error('Failed to save dailyStudyTime', e); }
+
+    try {
       setIsSaving(true);
       const result = await api.addLog(token, subject.name, startTime, endTime);
       onLogAdded(result.totalTime, result.subjectStats);
