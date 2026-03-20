@@ -1,1 +1,6 @@
+@import url('https://cdn.jsdelivr.net/gh/toss/tossface/dist/tossface.css');
 @import "tailwindcss";
+
+.tossface {
+  font-family: 'Tossface', sans-serif;
+}
