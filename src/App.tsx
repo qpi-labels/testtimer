@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { api, User } from './api';
 import { Login } from './components/Login';
@@ -190,7 +189,7 @@ export default function App() {
       <div className="w-full max-w-md bg-white p-8 rounded-3xl shadow-sm border border-gray-100 text-center">
         <h2 className="text-2xl font-bold text-gray-800 mb-2">환영합니다!</h2>
         <p className="text-gray-500 mb-6">사용하실 닉네임을 설정해주세요.</p>
-        <Settings user={user} token={token} onUpdate={(n, g) => setUser({ ...user, nickname: n, grade: g })} />
+        <Settings user={user} token={token} onUpdate={(n, g) => setUser({ ...user, nickname: n, grade: g })} onWithdraw={handleLogout} />
       </div>
     </div>
   );
@@ -274,7 +273,7 @@ export default function App() {
         {/* ── SETTINGS TAB ── */}
         {tab === 'settings' && (
           <div className="max-w-lg mx-auto">
-            <Settings user={user} token={token} onUpdate={(n, g) => setUser({ ...user, nickname: n, grade: g })} />
+            <Settings user={user} token={token} onUpdate={(n, g) => setUser({ ...user, nickname: n, grade: g })} onWithdraw={handleLogout} />
           </div>
         )}
       </main>
