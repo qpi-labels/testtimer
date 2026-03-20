@@ -62,7 +62,7 @@ export function ActiveUsers() {
         {users.map((u, idx) => (
           <div key={idx} className="flex items-center justify-between p-3 bg-green-50 border border-green-100 rounded-2xl">
             <div className="flex items-center gap-2">
-              <span className="text-lg">{u.emoji || '📚'}</span>
+              <span className="text-lg tossface">{u.emoji || '📚'}</span>
               <div>
                 <div className="flex items-center gap-1.5">
                   <p className="font-semibold text-gray-800 text-sm">{u.nickname}</p>
