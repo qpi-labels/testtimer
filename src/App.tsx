@@ -256,7 +256,7 @@ export default function App() {
         {/* ── PLANNER TAB ── */}
         {tab === 'planner' && (
           <div className="max-w-2xl mx-auto">
-            <DailyPlanner />
+            <DailyPlanner timerElapsed={timerElapsed} />
           </div>
         )}
 
@@ -296,3 +296,4 @@ function TrophyIcon({ size }: { size: number }) {
     </svg>
   );
 }
+
