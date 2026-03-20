@@ -184,6 +184,13 @@ export function Settings({ user, token, onUpdate, onWithdraw }: SettingsProps) {
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-400 font-medium w-28 flex-shrink-0" />
             <div className="flex items-center gap-2">
+              <img src="https://netonboard.com/wp-content/uploads/2022/08/apps-script-icon-250x250-1.png" alt="Google Apps Script" className="h-4 w-auto object-contain" />
+              <span className="text-sm font-semibold text-gray-700">Google Apps Script</span>
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-400 font-medium w-28 flex-shrink-0" />
+            <div className="flex items-center gap-2">
               <img src="https://brandlogos.net/wp-content/uploads/2025/12/google_antigravity-logo_brandlogos.net_qu4jc-768x708.png" alt="Google Antigravity" className="h-4 w-auto object-contain" />
               <span className="text-sm font-semibold text-gray-700">Google Antigravity</span>
             </div>
