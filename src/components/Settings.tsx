@@ -44,8 +44,9 @@ export function Settings({ user, token, onUpdate, onWithdraw }: SettingsProps) {
     setWithdrawing(true);
     try {
       await api.withdraw(token, withdrawEmail.trim());
+      localStorage.clear();
       alert('탈퇴가 완료되었습니다.');
-      onWithdraw();
+      window.location.reload();
     } catch (err: any) {
       alert('탈퇴 실패: ' + err.message);
     } finally {
@@ -118,7 +119,7 @@ export function Settings({ user, token, onUpdate, onWithdraw }: SettingsProps) {
           </button>
         ) : (
           <div className="space-y-3">
-            <p className="text-sm text-gray-600">본인 확인을 위해 가입한 이메일 주소를 입력하세요.</p>
+            <p className="text-sm text-gray-600">의도하지 않은 탈퇴를 방지하기 위해 가입한 이메일 주소를 입력하세요.</p>
             <input
               type="text"
               value={withdrawEmail}
