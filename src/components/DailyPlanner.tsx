@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Plus, Check, Trash2, ChevronLeft, ChevronRight,
-  ClipboardList, Clock, MoreVertical, X,
+  ClipboardList, Clock, MoreVertical, X, Link2, Link2Off, Timer,
 } from 'lucide-react';
 
 
@@ -18,12 +18,25 @@ export interface Task {
   category: string;
   createdAt: number;
   goalMinutes?: number;
+  subjectName?: string;  // 연결된 타이머 과목
+  actualMs?: number;     // 누적 실제 공부시간 (ms)
 }
 
 export interface DayData { tasks: Task[] }
 
 export const PLANNER_STORAGE_KEY = 'dailyPlanner_v1';
 const CATEGORIES = ['공부', '운동', '독서', '기타'];
+
+const SUBJECTS_STORAGE_KEY = 'customSubjects_v2';
+function loadTimerSubjects(): { emoji: string; name: string }[] {
+  try {
+    const saved = localStorage.getItem(SUBJECTS_STORAGE_KEY);
+    if (!saved) return [];
+    const parsed = JSON.parse(saved);
+    if (parsed.length && typeof parsed[0] === 'string') return parsed.map((s: string) => ({ emoji: '📚', name: s }));
+    return parsed;
+  } catch { return []; }
+}
 
 const CAT_COLOR: Record<string, { bg: string; text: string; dot: string }> = {
   '공부': { bg: 'bg-indigo-50',  text: 'text-indigo-700',  dot: 'bg-indigo-400'  },
@@ -53,6 +66,15 @@ function fmtDateLabel(d: Date) {
   if (toDateKey(d) === toDateKey(t))     return '내일';
   return '';
 }
+export function fmtMs(ms: number) {
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  const s = Math.floor((ms % 60000) / 1000);
+  if (h > 0) return `${h}시간 ${m}분`;
+  if (m > 0) return `${m}분 ${s}초`;
+  return `${s}초`;
+}
+
 export function fmtGoal(min: number) {
   if (min < 60) return `${min}분`;
   const h = Math.floor(min / 60), m = min % 60;
@@ -152,10 +174,68 @@ function GoalModal({ value, onSave, onClose }: {
 }
 
 /* ── Kebab menu ── */
-function KebabMenu({ onEditGoal, onDelete, hasGoal }: {
+
+/* ── Subject link modal ── */
+function SubjectLinkModal({ current, onSelect, onClose }: {
+  current?: string;
+  onSelect: (name: string | undefined) => void;
+  onClose: () => void;
+}) {
+  const subjects = loadTimerSubjects();
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-sm">
+      <div ref={ref} className="w-full sm:w-80 bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-base font-bold text-gray-800 flex items-center gap-2">
+            <Link2 size={15} className="text-blue-500" /> 타이머 과목 연결
+          </h3>
+          <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
+            <X size={16} />
+          </button>
+        </div>
+        <p className="text-xs text-gray-400 mb-3">선택한 과목으로 타이머를 돌리면 이 할 일에 자동으로 시간이 누적됩니다.</p>
+        <div className="space-y-1.5 max-h-60 overflow-y-auto">
+          {subjects.length === 0 && (
+            <p className="text-sm text-gray-400 text-center py-4">타이머에 과목을 먼저 추가해주세요.</p>
+          )}
+          {subjects.map(s => (
+            <button key={s.name} onClick={() => { onSelect(s.name); onClose(); }}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${
+                current === s.name ? 'bg-blue-50 text-blue-700 font-semibold' : 'hover:bg-gray-50 text-gray-700'
+              }`}>
+              <span className="tossface text-base">{s.emoji}</span>
+              <span>{s.name}</span>
+              {current === s.name && <span className="ml-auto text-xs text-blue-400">연결됨</span>}
+            </button>
+          ))}
+        </div>
+        {current && (
+          <button onClick={() => { onSelect(undefined); onClose(); }}
+            className="mt-3 w-full py-2 text-sm text-gray-400 hover:text-red-500 transition-colors flex items-center justify-center gap-1.5">
+            <Link2Off size={13} /> 연결 해제
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function KebabMenu({ onEditGoal, onDelete, onLinkSubject, hasGoal, linkedSubject }: {
   onEditGoal: () => void;
   onDelete: () => void;
+  onLinkSubject: () => void;
   hasGoal: boolean;
+  linkedSubject?: string;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -188,6 +268,13 @@ function KebabMenu({ onEditGoal, onDelete, hasGoal }: {
             <Clock size={14} className="text-violet-400" />
             {hasGoal ? '목표 시간 수정' : '목표 시간 설정'}
           </button>
+          <button
+            onClick={() => { setOpen(false); onLinkSubject(); }}
+            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+          >
+            {linkedSubject ? <Link2Off size={14} className="text-blue-400" /> : <Link2 size={14} className="text-blue-400" />}
+            {linkedSubject ? `연결 해제 (${linkedSubject})` : '타이머 과목 연결'}
+          </button>
           <div className="my-1 h-px bg-gray-100 mx-2" />
           <button
             onClick={() => { setOpen(false); onDelete(); }}
@@ -203,64 +290,104 @@ function KebabMenu({ onEditGoal, onDelete, hasGoal }: {
 }
 
 /* ── Task row ── */
-function TaskRow({ task, onToggle, onDelete, onUpdateGoal }: {
+function TaskRow({ task, onToggle, onDelete, onUpdateGoal, onUpdateSubject, liveMs }: {
   task: Task;
   onToggle: () => void;
   onDelete: () => void;
   onUpdateGoal: (min: number | undefined) => void;
+  onUpdateSubject: (name: string | undefined) => void;
+  liveMs?: number; // 실시간 경과 (해당 과목 타이머 실행 중일 때)
 }) {
-  const [showGoalModal, setShowGoalModal] = useState(false);
+  const [showGoalModal, setShowGoalModal]   = useState(false);
+  const [showSubjectModal, setShowSubjectModal] = useState(false);
   const c = catColor(task.category);
+
+  const totalActualMs = (task.actualMs || 0) + (liveMs || 0);
+  const goalMs = task.goalMinutes ? task.goalMinutes * 60000 : 0;
+  const progress = goalMs > 0 ? Math.min((totalActualMs / goalMs) * 100, 100) : 0;
 
   return (
     <>
-      <div className={`group flex items-center gap-3 p-3 rounded-2xl transition-colors ${task.done ? 'opacity-50' : 'hover:bg-gray-50'}`}>
-        {/* Checkbox */}
-        <button onClick={onToggle}
-          className={`flex-shrink-0 w-5 h-5 rounded-full border-2 transition-all flex items-center justify-center ${
-            task.done ? 'bg-violet-500 border-violet-500' : 'border-gray-300 hover:border-violet-400'
-          }`}>
-          {task.done && <Check size={11} className="text-white" strokeWidth={3} />}
-        </button>
+      <div className={`group rounded-2xl transition-colors ${task.done ? 'opacity-50' : 'hover:bg-gray-50'}`}>
+        <div className="flex items-center gap-3 p-3">
+          {/* Checkbox */}
+          <button onClick={onToggle}
+            className={`flex-shrink-0 w-5 h-5 rounded-full border-2 transition-all flex items-center justify-center ${
+              task.done ? 'bg-violet-500 border-violet-500' : 'border-gray-300 hover:border-violet-400'
+            }`}>
+            {task.done && <Check size={11} className="text-white" strokeWidth={3} />}
+          </button>
 
-        {/* Category chip */}
-        <span className={`flex-shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${c.bg} ${c.text}`}>
-          {task.category}
-        </span>
-
-        {/* Text */}
-        <span className={`flex-1 text-sm leading-snug min-w-0 truncate ${task.done ? 'text-gray-400 line-through' : 'text-gray-700'}`}>
-          {task.text}
-        </span>
-
-        {/* Goal badge (always visible if set) */}
-        {task.goalMinutes && (
-          <span className="flex-shrink-0 flex items-center gap-1 px-2 py-0.5 bg-violet-100 text-violet-700 rounded-full text-xs font-medium">
-            <Clock size={10} />{fmtGoal(task.goalMinutes)}
+          {/* Category chip */}
+          <span className={`flex-shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${c.bg} ${c.text}`}>
+            {task.category}
           </span>
-        )}
 
-        {/* Kebab */}
-        <KebabMenu
-          hasGoal={!!task.goalMinutes}
-          onEditGoal={() => setShowGoalModal(true)}
-          onDelete={onDelete}
-        />
+          {/* Text */}
+          <span className={`flex-1 text-sm leading-snug min-w-0 truncate ${task.done ? 'text-gray-400 line-through' : 'text-gray-700'}`}>
+            {task.text}
+          </span>
+
+          {/* Subject tag */}
+          {task.subjectName && (
+            <span className={`flex-shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+              liveMs ? 'bg-green-100 text-green-700 animate-pulse' : 'bg-blue-50 text-blue-600'
+            }`}>
+              <Timer size={9} />{task.subjectName}
+            </span>
+          )}
+
+          {/* Time badges */}
+          {task.goalMinutes && (
+            <span className="flex-shrink-0 flex items-center gap-1 px-2 py-0.5 bg-violet-100 text-violet-700 rounded-full text-xs font-medium">
+              <Clock size={10} />
+              {totalActualMs > 0 ? `${fmtMs(totalActualMs)} / ` : ''}{fmtGoal(task.goalMinutes)}
+            </span>
+          )}
+          {!task.goalMinutes && totalActualMs > 0 && (
+            <span className={`flex-shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+              liveMs ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+            }`}>
+              <Clock size={10} />{fmtMs(totalActualMs)}
+            </span>
+          )}
+
+          {/* Kebab */}
+          <KebabMenu
+            hasGoal={!!task.goalMinutes}
+            linkedSubject={task.subjectName}
+            onEditGoal={() => setShowGoalModal(true)}
+            onLinkSubject={() => setShowSubjectModal(true)}
+            onDelete={onDelete}
+          />
+        </div>
+
+        {/* Progress bar (목표시간 있고 실제시간 있을 때) */}
+        {goalMs > 0 && totalActualMs > 0 && (
+          <div className="mx-3 mb-2 h-1 bg-gray-100 rounded-full overflow-hidden">
+            <div className={`h-full rounded-full transition-all duration-500 ${
+              progress >= 100 ? 'bg-emerald-400' : liveMs ? 'bg-green-400' : 'bg-violet-400'
+            }`} style={{ width: `${progress}%` }} />
+          </div>
+        )}
       </div>
 
       {showGoalModal && (
-        <GoalModal
-          value={task.goalMinutes}
-          onSave={onUpdateGoal}
-          onClose={() => setShowGoalModal(false)}
-        />
+        <GoalModal value={task.goalMinutes} onSave={onUpdateGoal} onClose={() => setShowGoalModal(false)} />
+      )}
+      {showSubjectModal && (
+        <SubjectLinkModal current={task.subjectName} onSelect={onUpdateSubject} onClose={() => setShowSubjectModal(false)} />
       )}
     </>
   );
 }
 
 /* ── Main DailyPlanner ── */
-export function DailyPlanner() {
+export interface DailyPlannerProps {
+  timerElapsed?: { ms: number; subject: string };
+}
+
+export function DailyPlanner({ timerElapsed }: DailyPlannerProps = {}) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [allData, setAllData]         = useState<Record<string, DayData>>(loadAllPlanner);
   const [newText, setNewText]         = useState('');
@@ -272,6 +399,22 @@ export function DailyPlanner() {
   const tasks   = (allData[dateKey] ?? { tasks: [] }).tasks;
 
   useEffect(() => { saveAll(allData); }, [allData]);
+
+  // 타이머 elapsed 변화 감지 → 실제 시간 누적
+  const prevElapsed = useRef<{ ms: number; subject: string }>({ ms: 0, subject: '' });
+  useEffect(() => {
+    const prev = prevElapsed.current;
+    const curr = timerElapsed || { ms: 0, subject: '' };
+    // elapsed가 0으로 리셋됐고 이전에 실행 중이었으면 → 시간 커밋
+    if (prev.ms > 0 && curr.ms === 0 && prev.subject) {
+      updateTasks(tasks.map(t =>
+        t.subjectName === prev.subject
+          ? { ...t, actualMs: (t.actualMs || 0) + prev.ms }
+          : t
+      ));
+    }
+    prevElapsed.current = curr;
+  }, [timerElapsed]);
 
   const updateTasks = (next: Task[]) =>
     setAllData(prev => ({ ...prev, [dateKey]: { tasks: next } }));
@@ -422,7 +565,12 @@ export function DailyPlanner() {
           <TaskRow key={task.id} task={task}
             onToggle={() => toggleTask(task.id)}
             onDelete={() => deleteTask(task.id)}
-            onUpdateGoal={min => updateGoal(task.id, min)} />
+            onUpdateGoal={min => updateGoal(task.id, min)}
+            onUpdateSubject={name => updateSubject(task.id, name)}
+            liveMs={
+              timerElapsed && task.subjectName === timerElapsed.subject && timerElapsed.ms > 0
+                ? timerElapsed.ms : undefined
+            } />
         ))}
 
         {done.length > 0 && pending.length > 0 && (
@@ -437,7 +585,9 @@ export function DailyPlanner() {
           <TaskRow key={task.id} task={task}
             onToggle={() => toggleTask(task.id)}
             onDelete={() => deleteTask(task.id)}
-            onUpdateGoal={min => updateGoal(task.id, min)} />
+            onUpdateGoal={min => updateGoal(task.id, min)}
+            onUpdateSubject={name => updateSubject(task.id, name)}
+            liveMs={undefined} />
         ))}
       </div>
 
@@ -465,3 +615,4 @@ export function DailyPlanner() {
     </div>
   );
 }
+
