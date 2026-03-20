@@ -16,12 +16,12 @@ function sanitize(value: string, maxLen = 10): string {
 }
 
 export function Settings({ user, token, onUpdate, onWithdraw }: SettingsProps) {
-  const [nickname, setNickname]     = useState(user.nickname);
-  const [grade, setGrade]           = useState<number>(user.grade ?? 0);
-  const [saving, setSaving]         = useState(false);
+  const [nickname, setNickname] = useState(user.nickname);
+  const [grade, setGrade] = useState<number>(user.grade ?? 0);
+  const [saving, setSaving] = useState(false);
   const [showWithdraw, setShowWithdraw] = useState(false);
   const [withdrawEmail, setWithdrawEmail] = useState('');
-  const [withdrawing, setWithdrawing]   = useState(false);
+  const [withdrawing, setWithdrawing] = useState(false);
 
   const handleSave = async () => {
     if (!nickname.trim()) return alert('닉네임을 입력해주세요.');
@@ -81,11 +81,10 @@ export function Settings({ user, token, onUpdate, onWithdraw }: SettingsProps) {
             <div className="flex gap-2">
               {[0, 1, 2, 3].map(g => (
                 <button key={g} onClick={() => setGrade(g)}
-                  className={`flex-1 py-2 rounded-xl text-sm font-medium border transition-all ${
-                    grade === g
+                  className={`flex-1 py-2 rounded-xl text-sm font-medium border transition-all ${grade === g
                       ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
                       : 'bg-white text-gray-500 border-gray-200 hover:border-indigo-300 hover:text-indigo-500'
-                  }`}>
+                    }`}>
                   {g === 0 ? '미설정' : `${g}학년`}
                 </button>
               ))}
@@ -102,9 +101,8 @@ export function Settings({ user, token, onUpdate, onWithdraw }: SettingsProps) {
                   maxLength={10}
                   className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow pr-14"
                   placeholder="닉네임을 입력하세요" />
-                <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium ${
-                  nickname.length >= 10 ? 'text-red-400' : 'text-gray-400'
-                }`}>{nickname.length}/10</span>
+                <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium ${nickname.length >= 10 ? 'text-red-400' : 'text-gray-400'
+                  }`}>{nickname.length}/10</span>
               </div>
               <button onClick={handleSave} disabled={saving || !isDirty}
                 className="px-4 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-40 transition-colors flex items-center gap-1.5 text-sm font-medium">
@@ -155,16 +153,16 @@ export function Settings({ user, token, onUpdate, onWithdraw }: SettingsProps) {
           </div>
           <div className="h-px bg-gray-100" />
           <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-400 font-medium w-28 flex-shrink-0">Enhanced by</span>
+            <span className="text-xs text-gray-400 font-medium w-28 flex-shrink-0">Enhanced with</span>
             <div className="flex items-center gap-2">
-              <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Claude_AI_logo.svg/512px-Claude_AI_logo.svg.png" alt="Claude" className="h-4 w-4 object-contain" />
+              <img src="https://images.seeklogo.com/logo-png/55/2/claude-logo-png_seeklogo-554534.png" alt="Claude" className="h-4 w-4 object-contain" />
               <span className="text-sm font-semibold text-gray-700">Claude</span>
             </div>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-400 font-medium w-28 flex-shrink-0" />
             <div className="flex items-center gap-2">
-              <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Google_Gemini_logo.svg/512px-Google_Gemini_logo.svg.png" alt="Google Gemini" className="h-4 w-4 object-contain" />
+              <img src="https://brandlogos.net/wp-content/uploads/2025/03/gemini_icon-logo_brandlogos.net_aacx5-768x768.png" alt="Google Gemini" className="h-4 w-4 object-contain" />
               <span className="text-sm font-semibold text-gray-700">Google Gemini</span>
             </div>
           </div>
@@ -172,7 +170,7 @@ export function Settings({ user, token, onUpdate, onWithdraw }: SettingsProps) {
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-400 font-medium w-28 flex-shrink-0">Secured by</span>
             <div className="flex items-center gap-2">
-              <img src="https://cdn.iconscout.com/icon/free/png-256/free-cloudflare-icon-download-in-svg-png-gif-file-formats--logo-brand-world-logos-vol-8-pack-icons-282559.png" alt="Cloudflare" className="h-4 w-auto object-contain" />
+              <img src="https://www.svgrepo.com/show/353564/cloudflare.svg" alt="Cloudflare" className="h-4 w-auto object-contain" />
               <span className="text-sm font-semibold text-gray-700">Cloudflare</span>
             </div>
           </div>

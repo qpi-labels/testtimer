@@ -20,10 +20,10 @@ import {
 type Tab = 'timer' | 'planner' | 'stats' | 'settings';
 
 const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
-  { key: 'timer',    label: '타이머',  icon: <TimerIcon size={15} /> },
-  { key: 'planner',  label: '플래너',  icon: <ClipboardList size={15} /> },
-  { key: 'stats',    label: '통계',    icon: <BarChart2 size={15} /> },
-  { key: 'settings', label: '설정',    icon: <SettingsIcon size={15} /> },
+  { key: 'timer', label: '타이머', icon: <TimerIcon size={15} /> },
+  { key: 'planner', label: '플래너', icon: <ClipboardList size={15} /> },
+  { key: 'stats', label: '통계', icon: <BarChart2 size={15} /> },
+  { key: 'settings', label: '설정', icon: <SettingsIcon size={15} /> },
 ];
 
 /* ── Desktop animated tab pill ── */
@@ -67,9 +67,8 @@ function TabNav({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
           key={t.key}
           ref={el => { btnRefs.current[i] = el; }}
           onClick={() => setTab(t.key)}
-          className={`relative z-10 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium transition-colors duration-200 select-none ${
-            tab === t.key ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-800'
-          }`}
+          className={`relative z-10 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium transition-colors duration-200 select-none ${tab === t.key ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-800'
+            }`}
         >
           {t.icon} {t.label}
         </button>
@@ -113,9 +112,8 @@ function MobileTabBar({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
           key={t.key}
           ref={el => { btnRefs.current[i] = el; }}
           onClick={() => setTab(t.key)}
-          className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium transition-colors duration-200 ${
-            tab === t.key ? 'text-indigo-600' : 'text-gray-400'
-          }`}
+          className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium transition-colors duration-200 ${tab === t.key ? 'text-indigo-600' : 'text-gray-400'
+            }`}
         >
           {t.icon} {t.label}
         </button>
@@ -125,10 +123,10 @@ function MobileTabBar({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
 }
 
 export default function App() {
-  const [token, setToken]     = useState<string | null>(localStorage.getItem('token'));
-  const [user, setUser]       = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
-  const [tab, setTab]         = useState<Tab>('timer');
+  const [tab, setTab] = useState<Tab>('timer');
   const [todayStats, setTodayStats] = useState<{ totalTime: number; subjectStats: Record<string, number> }>({ totalTime: 0, subjectStats: {} });
   const [timerElapsed, setTimerElapsed] = useState<{ ms: number; subject: string }>({ ms: 0, subject: '' });
 
@@ -141,7 +139,7 @@ export default function App() {
     try {
       const stats = await api.getDailyStats(credential);
       setTodayStats(stats);
-    } catch {}
+    } catch { }
   };
 
   const handleLogin = async (credential: string) => {
@@ -200,7 +198,7 @@ export default function App() {
       {/* ── Header ── */}
       <header className="bg-white border-b border-gray-100 sticky top-0 z-20">
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
-          <h1 className="text-xl font-bold text-indigo-600 tracking-tight flex-shrink-0">StudyTimer</h1>
+          <h1 className="text-xl font-bold text-indigo-600 tracking-tight flex-shrink-0">충곽타이머</h1>
           <TabNav tab={tab} setTab={setTab} />
           <div className="flex items-center gap-3 flex-shrink-0">
             <span className="text-sm font-medium text-gray-600 hidden sm:block">{user.nickname}</span>
