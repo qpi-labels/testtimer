@@ -70,7 +70,7 @@ export function Settings({ user, token, onUpdate, onWithdraw }: SettingsProps) {
         <div className="space-y-5">
           {/* 이메일 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">이메일</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">구글 계정</label>
             <input type="text" value={user.email} disabled
               className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-400 cursor-not-allowed text-sm" />
           </div>
@@ -82,8 +82,8 @@ export function Settings({ user, token, onUpdate, onWithdraw }: SettingsProps) {
               {[0, 1, 2, 3].map(g => (
                 <button key={g} onClick={() => setGrade(g)}
                   className={`flex-1 py-2 rounded-xl text-sm font-medium border transition-all ${grade === g
-                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
-                      : 'bg-white text-gray-500 border-gray-200 hover:border-indigo-300 hover:text-indigo-500'
+                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                    : 'bg-white text-gray-500 border-gray-200 hover:border-indigo-300 hover:text-indigo-500'
                     }`}>
                   {g === 0 ? '미설정' : `${g}학년`}
                 </button>
@@ -116,7 +116,7 @@ export function Settings({ user, token, onUpdate, onWithdraw }: SettingsProps) {
       {/* ── 탈퇴 ── */}
       <div className="bg-white rounded-3xl shadow-sm border border-red-100 p-6">
         <h3 className="text-base font-bold text-red-500 mb-1">계정 탈퇴</h3>
-        <p className="text-sm text-gray-400 mb-4">탈퇴 시 모든 공부 기록이 영구 삭제됩니다.</p>
+        <p className="text-sm text-gray-400 mb-4">탈퇴 시 모든 공부 기록이 삭제되며 복구할 수 없습니다.</p>
         {!showWithdraw ? (
           <button onClick={() => setShowWithdraw(true)}
             className="px-4 py-2 text-sm font-medium text-red-500 border border-red-200 rounded-xl hover:bg-red-50 transition-colors">
