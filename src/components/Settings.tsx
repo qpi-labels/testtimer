@@ -211,7 +211,7 @@ export function Settings({ user, token, onUpdate, onWithdraw }: SettingsProps) {
             </div>
           </div>
         </div>
-        <p className="mt-6 text-center text-xs text-gray-300">© 2026 QPI. All rights reserved.</p>
+        <p className="mt-6 text-center text-xs text-gray-300">더 추가될 수 있습니다.</p>
       </div>
     </div>
   );
