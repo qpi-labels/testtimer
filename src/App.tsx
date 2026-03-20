@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { api, User } from './api';
 import { Login } from './components/Login';
@@ -244,7 +243,7 @@ export default function App() {
                 })()}
               </div>
 
-              <SubjectStats subjectStats={user.subjectStats || {}} totalTime={user.totalTime} />
+              <SubjectStats subjectStats={todayStats.subjectStats} totalTime={todayStats.totalTime} />
             </div>
 
             <div className="lg:col-span-4 space-y-6">
