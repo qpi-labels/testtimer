@@ -183,7 +183,7 @@ export function GoalTracker({ totalTime, subjectStats, totalCumulative = 0 }: Go
           {reached && (
             <div className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 rounded-full">
               <Check size={12} className="text-emerald-500" />
-              <span className="text-xs text-emerald-700 font-medium">목표 달성 🎉</span>
+              <span className="text-xs text-emerald-700 font-medium">목표 달성 <span className="tossface">🎉</span></span>
             </div>
           )}
         </div>
