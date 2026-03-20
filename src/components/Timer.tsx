@@ -180,7 +180,7 @@ export function Timer({ token, nickname, grade, onLogAdded, onElapsedChange }: T
 
         {/* Subject badge */}
         <div className="mb-10 flex items-center gap-2 px-5 py-2.5 bg-white/10 rounded-full border border-white/20">
-          <span className="text-2xl">{subject.emoji}</span>
+          <span className="text-2xl tossface">{subject.emoji}</span>
           <span className="text-white font-semibold text-lg">{subject.name}</span>
         </div>
 
@@ -246,7 +246,7 @@ export function Timer({ token, nickname, grade, onLogAdded, onElapsedChange }: T
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 } ${isRunning && subject.name !== s.name ? 'opacity-40 cursor-not-allowed' : ''}`}
             >
-              <span>{s.emoji}</span>
+              <span className="tossface">{s.emoji}</span>
               <span>{s.name}</span>
               {!isRunning && (
                 <button
@@ -299,7 +299,7 @@ export function Timer({ token, nickname, grade, onLogAdded, onElapsedChange }: T
               <p className="text-xs text-gray-400 mb-1.5 font-medium">과목 이름</p>
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-2 flex-1 px-3 py-2 bg-white border border-gray-200 rounded-xl focus-within:ring-2 focus-within:ring-indigo-400 focus-within:border-transparent transition-all">
-                  <span className="text-base flex-shrink-0">{newEmoji}</span>
+                  <span className="text-base flex-shrink-0 tossface">{newEmoji}</span>
                   <input
                     ref={nameInputRef}
                     type="text"
