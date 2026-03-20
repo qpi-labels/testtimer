@@ -3,11 +3,12 @@ import {
   BarChart2, ChevronLeft, ChevronRight,
   TrendingUp, Calendar, Award, Flame,
 } from 'lucide-react';
-import { loadAllPlanner, toDateKey, catColor, fmtGoal, fmtMs } from './DailyPlanner';
+import { toDateKey, catColor, fmtMs } from './DailyPlanner';
 
 interface StatisticsProps {
   subjectStats: Record<string, number>; // cumulative from server
   totalTime: number;
+  todayTotalTime?: number;
 }
 
 /* ── helpers ── */
@@ -29,20 +30,6 @@ function getMonthKey(year: number, month: number) {
   return `${year}-${padZero(month + 1)}`;
 }
 
-// From planner data: count completed tasks & goal minutes per date key
-function buildPlannerStats(allData: Record<string, any>) {
-  const byDate: Record<string, { total: number; done: number; goalMin: number; doneGoalMin: number }> = {};
-  for (const [key, day] of Object.entries(allData)) {
-    const tasks = (day as any).tasks ?? [];
-    const total = tasks.length;
-    const done  = tasks.filter((t: any) => t.done).length;
-    const goalMin     = tasks.reduce((s: number, t: any) => s + (t.goalMinutes ?? 0), 0);
-    const doneGoalMin = tasks.filter((t: any) => t.done).reduce((s: number, t: any) => s + (t.goalMinutes ?? 0), 0);
-    byDate[key] = { total, done, goalMin, doneGoalMin };
-  }
-  return byDate;
-}
-
 /* ── Heatmap cell ── */
 function getHeatColor(ms: number) {
   const hours = ms / 3600000;
@@ -59,10 +46,8 @@ function getHeatColor(ms: number) {
   return 'bg-emerald-900';
 }
 
-function HeatCell({ count, total, studyMs = 0 }: { count: number; total: number; studyMs?: number }) {
-  const titleText = studyMs > 0 
-    ? `공부 시간: ${fmtMs(studyMs)}\n할 일: ${count}/${total}` 
-    : `할 일: ${count}/${total}`;
+function HeatCell({ studyMs = 0 }: { studyMs?: number; key?: number | string }) {
+  const titleText = studyMs > 0 ? `공부 시간: ${fmtMs(studyMs)}` : `기록 없음`;
   const bg = getHeatColor(studyMs);
   return <div className={`w-4 h-4 rounded-sm ${bg} transition-colors`} title={titleText} />;
 }
@@ -93,22 +78,25 @@ function Bar({ value, max, label, sublabel, color = 'bg-indigo-400' }: {
 }
 
 /* ── Main Statistics ── */
-export function Statistics({ subjectStats, totalTime }: StatisticsProps) {
+export function Statistics({ subjectStats, totalTime, todayTotalTime = 0 }: StatisticsProps) {
   const today   = new Date();
   const [year, setYear]   = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth());
   const [view, setView]   = useState<'monthly' | 'daily'>('monthly');
 
-  const allPlannerData = useMemo(() => loadAllPlanner(), []);
-  const plannerStats   = useMemo(() => buildPlannerStats(allPlannerData), [allPlannerData]);
-
-  const [dailyStudy, setDailyStudy] = useState<Record<string, number>>({});
+  const [dailyData, setDailyData] = useState<Record<string, number>>({});
   React.useEffect(() => {
     try {
       const saved = localStorage.getItem('dailyStudyTime');
-      if (saved) setDailyStudy(JSON.parse(saved));
+      const parsed = saved ? JSON.parse(saved) : {};
+      
+      const todayKey = toDateKey(new Date());
+      if (todayTotalTime > 0) {
+        parsed[todayKey] = Math.max(parsed[todayKey] || 0, todayTotalTime);
+      }
+      setDailyData(parsed);
     } catch {}
-  }, []);
+  }, [todayTotalTime]);
 
   // ── Monthly view: one bar per day of the month ──
   const monthDays = daysInMonth(year, month);
@@ -118,40 +106,31 @@ export function Statistics({ subjectStats, totalTime }: StatisticsProps) {
     return Array.from({ length: monthDays }, (_, i) => {
       const day = i + 1;
       const key = `${monthKey}-${padZero(day)}`;
-      const s   = plannerStats[key] ?? { total: 0, done: 0, goalMin: 0, doneGoalMin: 0 };
-      return { day, key, ...s };
+      const studyMs = dailyData[key] || 0;
+      return { day, key, studyMs };
     });
-  }, [year, month, plannerStats, monthDays, monthKey]);
+  }, [year, month, dailyData, monthDays, monthKey]);
 
-  const maxDone = Math.max(...dailyBars.map(d => d.done), 1);
-
-  // Monthly totals
-  const monthlyTotals = useMemo(() => ({
-    totalTasks: dailyBars.reduce((s, d) => s + d.total, 0),
-    doneTasks:  dailyBars.reduce((s, d) => s + d.done, 0),
-    goalMin:    dailyBars.reduce((s, d) => s + d.goalMin, 0),
-    doneGoalMin: dailyBars.reduce((s, d) => s + d.doneGoalMin, 0),
-    activeDays: dailyBars.filter(d => d.total > 0).length,
-  }), [dailyBars]);
+  const maxDailyMs = Math.max(...dailyBars.map(d => d.studyMs), 1);
+  const monthTotalMs = dailyBars.reduce((s, d) => s + d.studyMs, 0);
+  const monthActiveDays = dailyBars.filter(d => d.studyMs > 0).length;
 
   // ── Daily view: one bar per month ──
   const monthlyBars = useMemo(() => {
     return Array.from({ length: 12 }, (_, m) => {
       const mk = getMonthKey(year, m);
-      const keys = Object.keys(plannerStats).filter(k => k.startsWith(mk));
-      const total = keys.reduce((s, k) => s + (plannerStats[k]?.total ?? 0), 0);
-      const done  = keys.reduce((s, k) => s + (plannerStats[k]?.done ?? 0), 0);
-      const goalMin = keys.reduce((s, k) => s + (plannerStats[k]?.goalMin ?? 0), 0);
+      const keys = Object.keys(dailyData).filter(k => k.startsWith(mk));
+      const studyMs = keys.reduce((s, k) => s + dailyData[k], 0);
       return {
         month: m,
         label: `${m + 1}월`,
-        total, done, goalMin,
-        activeDays: keys.filter(k => (plannerStats[k]?.total ?? 0) > 0).length,
+        studyMs,
       };
     });
-  }, [year, plannerStats]);
+  }, [year, dailyData]);
 
-  const maxMonthDone = Math.max(...monthlyBars.map(d => d.done), 1);
+  const maxMonthMs = Math.max(...monthlyBars.map(d => d.studyMs), 1);
+  const yearTotalMs = monthlyBars.reduce((s, d) => s + d.studyMs, 0);
 
   // ── Streak ──
   const streak = useMemo(() => {
@@ -159,18 +138,16 @@ export function Statistics({ subjectStats, totalTime }: StatisticsProps) {
     const cur = new Date();
     while (true) {
       const key = toDateKey(cur);
-      const s = plannerStats[key];
-      if (!s || s.total === 0 || s.done === 0) break;
-      count++;
+      const ms = dailyData[key] || 0;
+      if (ms > 0) {
+        count++;
+      } else if (key !== toDateKey(new Date())) {
+        break; // break streak on a past day with 0
+      }
       cur.setDate(cur.getDate() - 1);
     }
     return count;
-  }, [plannerStats]);
-
-  // Completion rate
-  const compRate = monthlyTotals.totalTasks > 0
-    ? Math.round((monthlyTotals.doneTasks / monthlyTotals.totalTasks) * 100)
-    : 0;
+  }, [dailyData]);
 
   const monthNames = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
 
@@ -194,14 +171,14 @@ export function Statistics({ subjectStats, totalTime }: StatisticsProps) {
           },
           {
             icon: <Calendar size={18} className="text-violet-500" />,
-            label: `${month + 1}월 완료율`,
-            value: `${compRate}%`,
+            label: `${month + 1}월 누적 시간`,
+            value: msToHM(monthTotalMs),
             bg: 'bg-violet-50',
           },
           {
             icon: <TrendingUp size={18} className="text-emerald-500" />,
-            label: `${month + 1}월 목표시간`,
-            value: monthlyTotals.goalMin > 0 ? fmtGoal(monthlyTotals.doneGoalMin) + ' / ' + fmtGoal(monthlyTotals.goalMin) : '—',
+            label: `${month + 1}월 일 평균`,
+            value: monthDays > 0 ? msToHM(monthTotalMs / (month === today.getMonth() && year === today.getFullYear() ? Math.max(today.getDate(), 1) : monthDays)) : '0분',
             bg: 'bg-emerald-50',
           },
         ].map((card, i) => (
@@ -279,15 +256,12 @@ export function Statistics({ subjectStats, totalTime }: StatisticsProps) {
                 {dailyBars.map(d => (
                   <div key={d.day} className="flex flex-col items-center gap-1 group flex-shrink-0" style={{ width: 20 }}>
                     <span className="text-[9px] text-indigo-500 font-bold opacity-0 group-hover:opacity-100 transition-opacity">
-                      {d.done > 0 ? d.done : ''}
+                      {d.studyMs > 0 ? (d.studyMs / 3600000).toFixed(1) + 'h' : ''}
                     </span>
                     <div className="relative w-4 bg-gray-100 rounded-t-md overflow-hidden" style={{ height: 72 }}>
-                      {d.total > 0 && (
-                        <div className="absolute bottom-0 left-0 right-0 bg-gray-200 rounded-t-md" style={{ height: '100%' }} />
-                      )}
                       <div
                         className="absolute bottom-0 left-0 right-0 bg-violet-500 rounded-t-md transition-all duration-700"
-                        style={{ height: `${maxDone > 0 ? (d.done / maxDone) * 100 : 0}%` }}
+                        style={{ height: `${maxDailyMs > 0 ? (d.studyMs / maxDailyMs) * 100 : 0}%` }}
                       />
                     </div>
                     <span className={`text-[9px] ${
@@ -299,16 +273,15 @@ export function Statistics({ subjectStats, totalTime }: StatisticsProps) {
 
               {/* Legend */}
               <div className="flex items-center gap-4 mt-3">
-                <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-violet-500" /><span className="text-xs text-gray-500">완료 항목</span></div>
-                <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-gray-200" /><span className="text-xs text-gray-500">전체 항목</span></div>
+                <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm bg-violet-500" /><span className="text-xs text-gray-500">공부 시간</span></div>
               </div>
 
               {/* Monthly stat row */}
               <div className="grid grid-cols-3 gap-3 mt-4">
                 {[
-                  { label: '활동일', value: `${monthlyTotals.activeDays}일` },
-                  { label: '완료 항목', value: `${monthlyTotals.doneTasks} / ${monthlyTotals.totalTasks}` },
-                  { label: '달성률', value: `${compRate}%` },
+                  { label: '활동일', value: `${monthActiveDays}일` },
+                  { label: '월 누적', value: msToHM(monthTotalMs) },
+                  { label: '일 평균', value: msToHM(monthTotalMs / Math.max(monthActiveDays, 1)) },
                 ].map((s, i) => (
                   <div key={i} className="bg-gray-50 rounded-2xl p-3 text-center">
                     <p className="text-xs text-gray-400 mb-1">{s.label}</p>
@@ -326,15 +299,12 @@ export function Statistics({ subjectStats, totalTime }: StatisticsProps) {
                 {monthlyBars.map(d => (
                   <div key={d.month} className="flex flex-col items-center gap-1 group flex-1">
                     <span className="text-[9px] text-indigo-500 font-bold opacity-0 group-hover:opacity-100 transition-opacity">
-                      {d.done > 0 ? d.done : ''}
+                      {d.studyMs > 0 ? (d.studyMs / 3600000).toFixed(1) + 'h' : ''}
                     </span>
                     <div className="relative w-full bg-gray-100 rounded-t-md overflow-hidden" style={{ height: 72 }}>
-                      {d.total > 0 && (
-                        <div className="absolute bottom-0 left-0 right-0 bg-gray-200 rounded-t-md" style={{ height: '100%' }} />
-                      )}
                       <div
                         className="absolute bottom-0 left-0 right-0 bg-indigo-500 rounded-t-md transition-all duration-700"
-                        style={{ height: `${maxMonthDone > 0 ? (d.done / maxMonthDone) * 100 : 0}%` }}
+                        style={{ height: `${maxMonthMs > 0 ? (d.studyMs / maxMonthMs) * 100 : 0}%` }}
                       />
                     </div>
                     <span className={`text-[9px] ${
@@ -348,17 +318,11 @@ export function Statistics({ subjectStats, totalTime }: StatisticsProps) {
 
               {/* Yearly summary */}
               <div className="grid grid-cols-3 gap-3 mt-4">
-                {(() => {
-                  const yTotal = monthlyBars.reduce((s, d) => s + d.total, 0);
-                  const yDone  = monthlyBars.reduce((s, d) => s + d.done, 0);
-                  const yGoal  = monthlyBars.reduce((s, d) => s + d.goalMin, 0);
-                  const yRate  = yTotal > 0 ? Math.round((yDone / yTotal) * 100) : 0;
-                  return [
-                    { label: '연간 완료', value: `${yDone} / ${yTotal}` },
-                    { label: '연간 달성률', value: `${yRate}%` },
-                    { label: '연간 목표시간', value: yGoal > 0 ? fmtGoal(yGoal) : '—' },
-                  ];
-                })().map((s, i) => (
+                {[
+                    { label: '연간 활동월', value: `${monthlyBars.filter(m => m.studyMs > 0).length}개월` },
+                    { label: '연간 누적', value: msToHM(yearTotalMs) },
+                    { label: '월 평균', value: msToHM(yearTotalMs / 12) },
+                ].map((s, i) => (
                   <div key={i} className="bg-gray-50 rounded-2xl p-3 text-center">
                     <p className="text-xs text-gray-400 mb-1">{s.label}</p>
                     <p className="text-base font-bold text-gray-800">{s.value}</p>
@@ -420,9 +384,8 @@ export function Statistics({ subjectStats, totalTime }: StatisticsProps) {
                 <div className="flex gap-1 flex-wrap">
                   {Array.from({ length: days }, (_, d) => {
                     const key = `${mk}-${padZero(d + 1)}`;
-                    const s = plannerStats[key] ?? { total: 0, done: 0 };
-                    const studyMs = dailyStudy[key] || 0;
-                    return <HeatCell key={d} count={s.done} total={s.total} studyMs={studyMs} />;
+                    const studyMs = dailyData[key] || 0;
+                    return <HeatCell key={d} studyMs={studyMs} />;
                   })}
                 </div>
               </div>

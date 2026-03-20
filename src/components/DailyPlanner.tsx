@@ -593,7 +593,7 @@ export function DailyPlanner({ timerElapsed }: DailyPlannerProps = {}) {
       </div>
 
       {/* Task list */}
-      <div className="px-6 py-4 space-y-1 max-h-[32rem] overflow-y-auto">
+      <div className="px-6 py-4 space-y-1 max-h-[32rem] overflow-y-auto min-h-[16rem] pb-40">
         {filtered.length === 0 && (
           <div className="text-center py-10">
             <p className="text-3xl mb-2 tossface">📋</p>

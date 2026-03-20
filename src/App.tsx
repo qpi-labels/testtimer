@@ -264,6 +264,7 @@ export default function App() {
             <Statistics
               subjectStats={user.subjectStats || {}}
               totalTime={user.totalTime}
+              todayTotalTime={todayStats.totalTime}
             />
           </div>
         )}
