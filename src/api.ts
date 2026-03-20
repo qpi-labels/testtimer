@@ -159,6 +159,18 @@ export const api = {
     return { totalTime: data.totalTime || 0, subjectStats: data.subjectStats || {} };
   },
 
+
+  async withdraw(token: string, email: string): Promise<void> {
+    if (!GAS_URL) return;
+    const res  = await fetch(GAS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'withdraw', token, email }),
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+  },
+
   async setActive(token: string, subject: string, emoji: string, startTime: number | null, nickname?: string, grade?: number): Promise<void> {
     if (!GAS_URL) {
       if (startTime && mockUser?.nickname) {
