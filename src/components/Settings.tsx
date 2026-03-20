@@ -155,6 +155,13 @@ export function Settings({ user, token, onUpdate, onWithdraw }: SettingsProps) {
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-400 font-medium w-28 flex-shrink-0">Enhanced with</span>
             <div className="flex items-center gap-2">
+              <img src="https://images.seeklogo.com/logo-png/35/2/tailwind-css-logo-png_seeklogo-354675.png" alt="Tailwind CSS" className="h-4 w-4 object-contain" />
+              <span className="text-sm font-semibold text-gray-700">Tailwind CSS</span>
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-400 font-medium w-28 flex-shrink-0" />
+            <div className="flex items-center gap-2">
               <img src="https://images.seeklogo.com/logo-png/55/2/claude-logo-png_seeklogo-554534.png" alt="Claude" className="h-4 w-4 object-contain" />
               <span className="text-sm font-semibold text-gray-700">Claude</span>
             </div>
