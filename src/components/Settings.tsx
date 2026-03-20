@@ -145,7 +145,7 @@ export function Settings({ user, token, onUpdate, onWithdraw }: SettingsProps) {
 
       {/* ── Credits ── */}
       <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
-        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-5">Credits</h3>
+        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-5">크레딧 (좀 길어요)</h3>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-400 font-medium w-28 flex-shrink-0">Developed by</span>
