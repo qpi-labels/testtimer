@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Trophy, RefreshCw } from 'lucide-react';
 import { api, LeaderboardEntry } from '../api';
 
 type Period = 'daily' | 'weekly' | 'monthly';
 
+const PERIODS: Period[] = ['daily', 'weekly', 'monthly'];
 const PERIOD_LABELS: Record<Period, string> = {
   daily:   '일간',
   weekly:  '주간',
@@ -11,9 +12,26 @@ const PERIOD_LABELS: Record<Period, string> = {
 };
 
 export function Leaderboard() {
-  const [period, setPeriod]   = useState<Period>('weekly');
+  const [period, setPeriod]   = useState<Period>('daily');
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Animated pill
+  const containerRef = useRef<HTMLDivElement>(null);
+  const btnRefs      = useRef<(HTMLButtonElement | null)[]>([]);
+  const [pill, setPill]       = useState({ left: 0, width: 0 });
+  const initialized            = useRef(false);
+
+  useEffect(() => {
+    const idx  = PERIODS.indexOf(period);
+    const btn  = btnRefs.current[idx];
+    const cont = containerRef.current;
+    if (!btn || !cont) return;
+    const br = btn.getBoundingClientRect();
+    const cr = cont.getBoundingClientRect();
+    setPill({ left: br.left - cr.left, width: br.width });
+    initialized.current = true;
+  }, [period]);
 
   const fetchLeaderboard = async (p: Period) => {
     setLoading(true);
@@ -60,16 +78,29 @@ export function Leaderboard() {
         </button>
       </div>
 
-      {/* Period tabs */}
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl mb-4">
-        {(Object.keys(PERIOD_LABELS) as Period[]).map(p => (
+      {/* Period tabs — animated pill */}
+      <div
+        ref={containerRef}
+        className="relative flex gap-0 bg-gray-100 p-1 rounded-xl mb-4"
+      >
+        {/* sliding pill */}
+        <span
+          className="absolute top-1 bottom-1 bg-white rounded-lg shadow-sm pointer-events-none"
+          style={{
+            left:  pill.left,
+            width: pill.width,
+            transition: initialized.current
+              ? 'left 0.3s cubic-bezier(0.4,0,0.2,1), width 0.3s cubic-bezier(0.4,0,0.2,1)'
+              : 'none',
+          }}
+        />
+        {PERIODS.map((p, i) => (
           <button
             key={p}
+            ref={el => { btnRefs.current[i] = el; }}
             onClick={() => setPeriod(p)}
-            className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              period === p
-                ? 'bg-white text-indigo-600 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
+            className={`relative z-10 flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors duration-200 select-none ${
+              period === p ? 'text-indigo-600' : 'text-gray-500 hover:text-gray-700'
             }`}
           >
             {PERIOD_LABELS[p]}
@@ -93,10 +124,12 @@ export function Leaderboard() {
                 <span className={`font-bold w-6 text-center text-sm ${rank}`}>
                   {idx < 3 ? ['🥇','🥈','🥉'][idx] : idx + 1}
                 </span>
-                <span className="font-medium text-gray-800 text-sm">{entry.nickname}</span>
-                {entry.grade && (
-                  <span className="text-[10px] font-bold text-gray-400">{entry.grade}학년</span>
-                )}
+                <div className="flex items-center gap-1.5">
+                  <span className="font-medium text-gray-800 text-sm">{entry.nickname}</span>
+                  {entry.grade && (
+                    <span className="text-[10px] font-bold text-gray-400">{entry.grade}학년</span>
+                  )}
+                </div>
               </div>
               <span className="text-indigo-600 font-semibold text-sm">
                 {formatTime(entry.totalTime)}
