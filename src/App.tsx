@@ -10,6 +10,7 @@ import { DailyPlanner } from './components/DailyPlanner';
 import { GoalTracker } from './components/GoalTracker';
 import { Statistics } from './components/Statistics';
 import { InsightUtility } from './components/InsightUtility';
+import { TimeGacha } from './components/TimeGacha';
 import {
   LogOut,
   Timer as TimerIcon,
@@ -303,6 +304,8 @@ export default function App() {
             <InsightUtility />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+
+              <TimeGacha token={token as string} onLogAdded={handleLogAdded} />
 
               <a
                 href="https://dasein.qpi.digital"
