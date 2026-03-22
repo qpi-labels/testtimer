@@ -71,8 +71,8 @@ function QpiApiCard({ userUid }: { userUid?: string }) {
           </div>
         ) : (
           <>
-            <h3 className="text-sm font-semibold text-gray-800 mb-1">인증 토큰 발급기</h3>
-            <p className="text-xs text-gray-500 leading-relaxed">클릭하여 고유 QPI API Key를 발급받아보세요. 아무 짝에도 쓸모 없답니다!</p>
+            <h3 className="text-sm font-semibold text-gray-800 mb-1">QPI API Key 발급</h3>
+            <p className="text-xs text-gray-500 leading-relaxed">클릭하여 아무 짝에도 쓸모 없는 QPI API Key를 발급받아보세요.</p>
           </>
         )}
       </div>
