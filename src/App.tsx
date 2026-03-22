@@ -30,12 +30,22 @@ async function sha256(message: string) {
 
 function QpiApiCard({ userUid }: { userUid?: string }) {
   const [uid, setUid] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const handleGenerate = async () => {
     if (!userUid) return;
     const hash = await sha256(userUid + "_qpi_secret_salt_2026");
     const newUid = 'qpi_' + hash.substring(0, 32).toUpperCase();
     setUid(newUid);
+  };
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (uid) {
+      navigator.clipboard.writeText(uid);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   return (
@@ -52,9 +62,12 @@ function QpiApiCard({ userUid }: { userUid?: string }) {
       </div>
       <div className="flex-1 flex flex-col justify-end">
         {uid ? (
-          <div className="bg-indigo-50/50 p-3 rounded-xl border border-indigo-100/50" onClick={(e) => e.stopPropagation()}>
-            <p className="text-[10px] text-indigo-400 font-bold mb-1 uppercase tracking-wider">발급된 API Key</p>
-            <p className="text-xs font-mono text-indigo-800 break-all select-all">{uid}</p>
+          <div className="bg-indigo-50/50 p-3 rounded-xl border border-indigo-100/50 cursor-pointer hover:bg-indigo-100/50 transition-colors relative" onClick={handleCopy}>
+            <div className="flex justify-between items-center mb-1">
+              <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider">발급된 API Key</p>
+              {copied && <span className="text-[9px] font-bold text-indigo-600 bg-indigo-100 px-1.5 py-0.5 rounded-md">복사됨!</span>}
+            </div>
+            <p className="text-xs font-mono text-indigo-800 break-all">{uid}</p>
           </div>
         ) : (
           <>

@@ -54,7 +54,7 @@ function renderMarkdown(text: string) {
 }
 
 export function InsightUtility() {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [apiKey, setApiKey] = useState('');
   const [savedKey, setSavedKey] = useState<string | null>(null);
   const [topic, setTopic] = useState('');
@@ -124,15 +124,11 @@ export function InsightUtility() {
       </button>
 
       <div
-        className="transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] overflow-hidden"
-        style={{
-          maxHeight: isExpanded ? '1000px' : '0px',
-          opacity: isExpanded ? 1 : 0
-        }}
-        ref={contentRef}
+        className={`grid transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}
       >
-        <div className="px-6 pb-6 pt-2">
-          {!savedKey ? (
+        <div className="overflow-hidden" ref={contentRef}>
+          <div className="px-6 pb-6 pt-2">
+            {!savedKey ? (
             <div className="bg-gradient-to-b from-gray-50 to-white border border-gray-100 rounded-3xl p-8 text-center shadow-sm">
               <div className="w-16 h-16 bg-white border border-gray-100 shadow-sm rounded-2xl mx-auto flex items-center justify-center mb-4">
                 <Key size={28} className="text-indigo-400" />
@@ -202,6 +198,7 @@ export function InsightUtility() {
               )}
             </div>
           )}
+          </div>
         </div>
       </div>
     </div>
