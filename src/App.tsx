@@ -39,8 +39,8 @@ function QpiApiCard({ userUid }: { userUid?: string }) {
   };
 
   return (
-    <div 
-      className="group flex flex-col p-6 bg-white border border-gray-100 rounded-3xl hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:border-indigo-100 transition-all duration-300 relative overflow-hidden cursor-pointer h-full" 
+    <div
+      className="group flex flex-col p-6 bg-white border border-gray-100 rounded-3xl hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:border-indigo-100 transition-all duration-300 relative overflow-hidden cursor-pointer h-full"
       onClick={handleGenerate}
     >
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-400 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -53,13 +53,13 @@ function QpiApiCard({ userUid }: { userUid?: string }) {
       <div className="flex-1 flex flex-col justify-end">
         {uid ? (
           <div className="bg-indigo-50/50 p-3 rounded-xl border border-indigo-100/50" onClick={(e) => e.stopPropagation()}>
-            <p className="text-[10px] text-indigo-400 font-bold mb-1 uppercase tracking-wider">발급된 UID</p>
+            <p className="text-[10px] text-indigo-400 font-bold mb-1 uppercase tracking-wider">발급된 API Key</p>
             <p className="text-xs font-mono text-indigo-800 break-all select-all">{uid}</p>
           </div>
         ) : (
           <>
             <h3 className="text-sm font-semibold text-gray-800 mb-1">인증 토큰 발급기</h3>
-            <p className="text-xs text-gray-500 leading-relaxed">클릭하여 쓸데없는 고유 QPI API Key를 무한정 발급받아보세요.</p>
+            <p className="text-xs text-gray-500 leading-relaxed">클릭하여 고유 QPI API Key를 발급받아보세요.</p>
           </>
         )}
       </div>
@@ -166,11 +166,10 @@ function MobileTabBar({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
               <button
                 ref={el => { btnRefs.current[i] = el; }}
                 onClick={() => setTab(t.key)}
-                className={`flex flex-col items-center justify-center w-16 h-16 -mt-10 rounded-full shadow-lg border-4 border-white transition-all transform active:scale-95 ${
-                  tab === t.key 
-                    ? 'bg-indigo-600 text-white shadow-indigo-200' 
+                className={`flex flex-col items-center justify-center w-16 h-16 -mt-10 rounded-full shadow-lg border-4 border-white transition-all transform active:scale-95 ${tab === t.key
+                    ? 'bg-indigo-600 text-white shadow-indigo-200'
                     : 'bg-indigo-400 text-white hover:bg-indigo-500 shadow-sm'
-                }`}
+                  }`}
               >
                 {t.icon && React.cloneElement(t.icon as React.ReactElement, { size: 28 })}
               </button>
@@ -182,9 +181,8 @@ function MobileTabBar({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
             key={t.key}
             ref={el => { btnRefs.current[i] = el; }}
             onClick={() => setTab(t.key)}
-            className={`flex-1 flex flex-col items-center justify-between gap-1 py-3 text-[10px] font-medium transition-colors duration-200 ${
-              tab === t.key ? 'text-indigo-600' : 'text-gray-400'
-            }`}
+            className={`flex-1 flex flex-col items-center justify-between gap-1 py-3 text-[10px] font-medium transition-colors duration-200 ${tab === t.key ? 'text-indigo-600' : 'text-gray-400'
+              }`}
           >
             {t.icon && React.cloneElement(t.icon as React.ReactElement, { size: 20 })}
             <span>{t.label}</span>
@@ -288,14 +286,14 @@ export default function App() {
         {tab === 'utility' && (
           <div className="space-y-6">
             <h2 className="text-xl font-bold text-gray-800">유틸리티</h2>
-            
+
             <InsightUtility />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-              
-              <a 
-                href="https://dasein.qpi.digital" 
-                target="_blank" 
+
+              <a
+                href="https://dasein.qpi.digital"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="group flex flex-col p-6 bg-white border border-gray-100 rounded-3xl hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:border-red-100 transition-all duration-300 relative overflow-hidden h-full"
               >
