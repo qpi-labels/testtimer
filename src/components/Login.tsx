@@ -10,7 +10,7 @@ export function Login({ onSuccess }: LoginProps) {
     <div className="flex flex-col items-center justify-center h-full space-y-6">
       <h1 className="text-3xl font-bold text-gray-800">충곽 타이머</h1>
       <p className="text-gray-500 text-center">
-        충곽 학생들과 경쟁하다!
+        방법에 상관 없이, 가장 많은 시간동안 공부한 충곽 학생이 되어보세요!
       </p>
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
         <GoogleLogin
