@@ -16,6 +16,7 @@ import {
   BarChart2,
   Settings as SettingsIcon,
   Wrench,
+  ExternalLink,
 } from 'lucide-react';
 
 type Tab = 'utility' | 'timer' | 'planner' | 'stats' | 'settings';
@@ -215,10 +216,28 @@ export default function App() {
 
         {/* ── UTILITY TAB ── */}
         {tab === 'utility' && (
-          <div className="flex flex-col items-center justify-center min-h-[50vh] text-gray-400">
-            <Wrench size={48} className="mb-4 opacity-50" />
-            <p className="text-lg font-medium mb-1">준비중입니다</p>
-            <p className="text-sm">재미있는 기능들이 추가될 예정이에요!</p>
+          <div className="space-y-6">
+            <h2 className="text-xl font-bold text-gray-800">유틸리티</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              
+              <a 
+                href="https://dasein.qpi.digital" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="group block p-6 bg-white border border-gray-100 rounded-3xl hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:border-red-100 transition-all duration-300 relative overflow-hidden"
+              >
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-600 to-red-800 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-3xl font-bold tracking-tight text-gray-900" style={{ fontFamily: '"Playfair Display", serif' }}>Dasein;</span>
+                  <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-red-50 transition-colors">
+                    <ExternalLink size={16} className="text-gray-400 group-hover:text-red-600 transition-colors" />
+                  </div>
+                </div>
+                <h3 className="text-sm font-semibold text-gray-800 mb-1">학술 연구 검색엔진</h3>
+                <p className="text-xs text-gray-500 leading-relaxed">학술 자료와 논문을 빠르게 검색하고 탐색하세요.</p>
+              </a>
+
+            </div>
           </div>
         )}
 
