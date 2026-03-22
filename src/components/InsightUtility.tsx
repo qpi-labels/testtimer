@@ -1,7 +1,57 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { generateInsight } from './geminiService';
 import { ChevronDown, ExternalLink, Key, Loader2, Sparkles } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
+
+function parseInline(text: string) {
+  const parts = text.split(/(\*\*.*?\*\*|\*.*?\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i} className="font-bold">{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith('*') && part.endsWith('*')) {
+      return <em key={i} className="italic">{part.slice(1, -1)}</em>;
+    }
+    return part;
+  });
+}
+
+function renderMarkdown(text: string) {
+  return text.split('\n\n').map((paragraph, index) => {
+    paragraph = paragraph.trim();
+    if (!paragraph) return null;
+
+    if (paragraph.startsWith('* ') || paragraph.startsWith('- ')) {
+      const items = paragraph.split('\n').map(line => line.trim().replace(/^[-*]\s+/, ''));
+      return (
+        <ul key={index} className="list-disc ml-5 mb-4">
+          {items.map((item, i) => <li key={i} className="mb-1">{parseInline(item)}</li>)}
+        </ul>
+      );
+    }
+    if (paragraph.match(/^\d+\.\s+/)) {
+      const items = paragraph.split('\n').map(line => line.trim().replace(/^\d+\.\s+/, ''));
+      return (
+        <ol key={index} className="list-decimal ml-5 mb-4">
+          {items.map((item, i) => <li key={i} className="mb-1">{parseInline(item)}</li>)}
+        </ol>
+      );
+    }
+    if (paragraph.startsWith('### ')) {
+      return <h3 key={index} className="text-lg font-bold mb-3">{parseInline(paragraph.replace('### ', ''))}</h3>;
+    }
+    if (paragraph.startsWith('## ')) {
+      return <h2 key={index} className="text-xl font-bold mb-3">{parseInline(paragraph.replace('## ', ''))}</h2>;
+    }
+    if (paragraph.startsWith('# ')) {
+      return <h1 key={index} className="text-2xl font-bold mb-4">{parseInline(paragraph.replace('# ', ''))}</h1>;
+    }
+    if (paragraph.startsWith('> ')) {
+      return <blockquote key={index} className="pl-4 border-l-4 border-indigo-300 italic text-gray-600 mb-4 bg-gray-50/50 py-2">{parseInline(paragraph.replace(/^>\s*/gm, ''))}</blockquote>;
+    }
+    
+    return <p key={index} className="mb-4 last:mb-0 leading-relaxed">{parseInline(paragraph.replace(/\n/g, ' '))}</p>;
+  });
+}
 
 export function InsightUtility() {
   const [isExpanded, setIsExpanded] = useState(true);
@@ -140,15 +190,11 @@ export function InsightUtility() {
               </button>
 
               {result && (
-                <div
-                  className="mt-4 p-6 rounded-3xl bg-gray-50 border border-gray-100 text-gray-800 leading-relaxed"
+                <div 
+                  className="mt-6 p-6 rounded-3xl bg-gray-50 border border-gray-100 text-gray-800"
                   style={{ fontFamily: '"Noto Serif KR", serif' }}
                 >
-                  <ReactMarkdown
-                    className="[&>p]:mb-4 last:[&>p]:mb-0 [&>h1]:text-2xl [&>h1]:font-bold [&>h1]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:mb-3 [&>h3]:text-lg [&>h3]:font-bold [&>h3]:mb-3 [&>ul]:list-disc [&>ul]:ml-5 [&>ul]:mb-4 [&>ol]:list-decimal [&>ol]:ml-5 [&>ol]:mb-4 [&>li]:mb-1 [&>strong]:font-bold"
-                  >
-                    {result}
-                  </ReactMarkdown>
+                  {renderMarkdown(result)}
                 </div>
               )}
             </div>
