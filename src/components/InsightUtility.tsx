@@ -49,7 +49,7 @@ export function InsightUtility() {
   // However, flex layouts can shift, so max-height is usually easiest.
   return (
     <div className="bg-white border border-gray-100 rounded-3xl shadow-[0_4px_20px_rgb(0,0,0,0.02)] overflow-hidden transition-all duration-300">
-      <button 
+      <button
         onClick={() => setIsExpanded(!isExpanded)}
         className="w-full flex items-center justify-between p-6 hover:bg-gray-50/50 transition-colors text-left"
       >
@@ -59,20 +59,20 @@ export function InsightUtility() {
           </div>
           <div>
             <h3 className="text-xl font-bold text-gray-900 tracking-tight">Insight</h3>
-            <p className="text-sm text-gray-500 font-medium mt-0.5">Gemini 3 Flash 기반 심연 분석 AI</p>
+            <p className="text-sm text-gray-500 font-medium mt-0.5">Google Gemini 기반 심연 분석 AI</p>
           </div>
         </div>
         <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-50/80 group-hover:bg-white transition-colors">
-          <ChevronDown 
-            size={20} 
+          <ChevronDown
+            size={20}
             className={`text-gray-400 transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${isExpanded ? 'rotate-180' : ''}`}
           />
         </div>
       </button>
 
-      <div 
+      <div
         className="transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] overflow-hidden"
-        style={{ 
+        style={{
           maxHeight: isExpanded ? '1000px' : '0px',
           opacity: isExpanded ? 1 : 0
         }}
@@ -89,9 +89,9 @@ export function InsightUtility() {
                 가장 강력한 AI 모델을 사용하기 위해 Google AI Studio에서 무료 API 키를 발급받아 등록해주세요. (키는 브라우저에만 안전하게 보관됩니다)
               </p>
               <div className="flex justify-center mb-6">
-                <a 
-                  href="https://aistudio.google.com/app/apikey" 
-                  target="_blank" 
+                <a
+                  href="https://aistudio.google.com/app/apikey"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-50 text-sm text-indigo-700 font-semibold rounded-xl hover:bg-indigo-100 transition-colors"
                 >
@@ -99,7 +99,7 @@ export function InsightUtility() {
                 </a>
               </div>
               <div className="flex max-w-sm mx-auto items-center p-1.5 bg-gray-50 border border-gray-200 rounded-2xl focus-within:ring-2 focus-within:ring-indigo-100 focus-within:border-indigo-300 transition-all">
-                <input 
+                <input
                   type="password"
                   value={apiKey}
                   onChange={e => setApiKey(e.target.value)}
@@ -107,7 +107,7 @@ export function InsightUtility() {
                   className="flex-1 px-4 py-2 bg-transparent focus:outline-none text-sm font-mono"
                   onKeyDown={e => e.key === 'Enter' && handleSaveKey()}
                 />
-                <button 
+                <button
                   onClick={handleSaveKey}
                   disabled={!apiKey.trim()}
                   className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-semibold shadow-sm hover:translate-y-[-1px] hover:shadow-md active:translate-y-0 transition-all disabled:opacity-50 disabled:pointer-events-none"
@@ -140,12 +140,12 @@ export function InsightUtility() {
               </button>
 
               {result && (
-                <div 
-                  className="mt-4 p-6 rounded-3xl bg-gray-50 border border-gray-100 text-gray-800 leading-relax"
+                <div
+                  className="mt-4 p-6 rounded-3xl bg-gray-50 border border-gray-100 text-gray-800 leading-relaxed"
                   style={{ fontFamily: '"Noto Serif KR", serif' }}
                 >
-                  <ReactMarkdown 
-                    className="prose prose-sm prose-indigo max-w-none prose-p:leading-relaxed prose-headings:font-bold prose-headings:mb-3 prose-p:mb-4 last:prose-p:mb-0"
+                  <ReactMarkdown
+                    className="[&>p]:mb-4 last:[&>p]:mb-0 [&>h1]:text-2xl [&>h1]:font-bold [&>h1]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:mb-3 [&>h3]:text-lg [&>h3]:font-bold [&>h3]:mb-3 [&>ul]:list-disc [&>ul]:ml-5 [&>ul]:mb-4 [&>ol]:list-decimal [&>ol]:ml-5 [&>ol]:mb-4 [&>li]:mb-1 [&>strong]:font-bold"
                   >
                     {result}
                   </ReactMarkdown>
