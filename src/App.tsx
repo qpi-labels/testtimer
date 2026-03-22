@@ -24,8 +24,8 @@ type Tab = 'utility' | 'timer' | 'planner' | 'stats' | 'settings';
 
 const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
   { key: 'utility', label: '유틸리티', icon: <Wrench size={15} /> },
-  { key: 'timer', label: '타이머', icon: <TimerIcon size={15} /> },
   { key: 'planner', label: '플래너', icon: <ClipboardList size={15} /> },
+  { key: 'timer', label: '타이머', icon: <TimerIcon size={15} /> },
   { key: 'stats', label: '통계', icon: <BarChart2 size={15} /> },
   { key: 'settings', label: '설정', icon: <SettingsIcon size={15} /> },
 ];
@@ -100,28 +100,50 @@ function MobileTabBar({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
   }, [tab]);
 
   return (
-    <nav ref={containerRef} className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex z-20">
+    <nav ref={containerRef} className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex items-end z-20 pb-2">
       <span
         className="absolute top-0 h-0.5 bg-indigo-500 rounded-full pointer-events-none"
         style={{
           left: line.left,
           width: line.width,
+          opacity: tab === 'timer' ? 0 : 1,
           transition: initialized.current
-            ? 'left 0.3s cubic-bezier(0.4,0,0.2,1), width 0.3s cubic-bezier(0.4,0,0.2,1)'
+            ? 'left 0.3s cubic-bezier(0.4,0,0.2,1), width 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.3s'
             : 'none',
         }}
       />
-      {TABS.map((t, i) => (
-        <button
-          key={t.key}
-          ref={el => { btnRefs.current[i] = el; }}
-          onClick={() => setTab(t.key)}
-          className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[11px] font-medium transition-colors duration-200 ${tab === t.key ? 'text-indigo-600' : 'text-gray-400'
+      {TABS.map((t, i) => {
+        if (t.key === 'timer') {
+          return (
+            <div key={t.key} className="flex-1 flex justify-center pb-2">
+              <button
+                ref={el => { btnRefs.current[i] = el; }}
+                onClick={() => setTab(t.key)}
+                className={`flex flex-col items-center justify-center w-16 h-16 -mt-10 rounded-full shadow-lg border-4 border-white transition-all transform active:scale-95 ${
+                  tab === t.key 
+                    ? 'bg-indigo-600 text-white shadow-indigo-200' 
+                    : 'bg-indigo-400 text-white hover:bg-indigo-500 shadow-sm'
+                }`}
+              >
+                {t.icon && React.cloneElement(t.icon as React.ReactElement, { size: 28 })}
+              </button>
+            </div>
+          );
+        }
+        return (
+          <button
+            key={t.key}
+            ref={el => { btnRefs.current[i] = el; }}
+            onClick={() => setTab(t.key)}
+            className={`flex-1 flex flex-col items-center justify-between gap-1 py-3 text-[10px] font-medium transition-colors duration-200 ${
+              tab === t.key ? 'text-indigo-600' : 'text-gray-400'
             }`}
-        >
-          {t.icon} {t.label}
-        </button>
-      ))}
+          >
+            {t.icon && React.cloneElement(t.icon as React.ReactElement, { size: 20 })}
+            <span>{t.label}</span>
+          </button>
+        );
+      })}
     </nav>
   );
 }
