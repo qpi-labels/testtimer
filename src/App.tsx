@@ -15,11 +15,13 @@ import {
   ClipboardList,
   BarChart2,
   Settings as SettingsIcon,
+  Wrench,
 } from 'lucide-react';
 
-type Tab = 'timer' | 'planner' | 'stats' | 'settings';
+type Tab = 'utility' | 'timer' | 'planner' | 'stats' | 'settings';
 
 const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
+  { key: 'utility', label: '유틸리티', icon: <Wrench size={15} /> },
   { key: 'timer', label: '타이머', icon: <TimerIcon size={15} /> },
   { key: 'planner', label: '플래너', icon: <ClipboardList size={15} /> },
   { key: 'stats', label: '통계', icon: <BarChart2 size={15} /> },
@@ -210,6 +212,15 @@ export default function App() {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 py-8 pb-24 sm:pb-8">
+
+        {/* ── UTILITY TAB ── */}
+        {tab === 'utility' && (
+          <div className="flex flex-col items-center justify-center min-h-[50vh] text-gray-400">
+            <Wrench size={48} className="mb-4 opacity-50" />
+            <p className="text-lg font-medium mb-1">준비중입니다</p>
+            <p className="text-sm">재미있는 기능들이 추가될 예정이에요!</p>
+          </div>
+        )}
 
         {/* ── TIMER TAB ── */}
         {tab === 'timer' && (
