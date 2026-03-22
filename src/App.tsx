@@ -9,6 +9,7 @@ import { ActiveUsers } from './components/ActiveUsers';
 import { DailyPlanner } from './components/DailyPlanner';
 import { GoalTracker } from './components/GoalTracker';
 import { Statistics } from './components/Statistics';
+import { InsightUtility } from './components/InsightUtility';
 import {
   LogOut,
   Timer as TimerIcon,
@@ -218,7 +219,10 @@ export default function App() {
         {tab === 'utility' && (
           <div className="space-y-6">
             <h2 className="text-xl font-bold text-gray-800">유틸리티</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            
+            <InsightUtility />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
               
               <a 
                 href="https://dasein.qpi.digital" 
