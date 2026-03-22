@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { generateInsight } from './geminiService';
 import { ChevronDown, ExternalLink, Key, Loader2, Sparkles } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 
 export function InsightUtility() {
   const [isExpanded, setIsExpanded] = useState(true);
@@ -139,8 +140,15 @@ export function InsightUtility() {
               </button>
 
               {result && (
-                <div className="mt-6 p-6 rounded-3xl bg-gray-50 border border-gray-100 font-sans text-gray-800 leading-relaxed whitespace-pre-wrap text-[15px]">
-                  {result}
+                <div 
+                  className="mt-4 p-6 rounded-3xl bg-gray-50 border border-gray-100 text-gray-800 leading-relax"
+                  style={{ fontFamily: '"Noto Serif KR", serif' }}
+                >
+                  <ReactMarkdown 
+                    className="prose prose-sm prose-indigo max-w-none prose-p:leading-relaxed prose-headings:font-bold prose-headings:mb-3 prose-p:mb-4 last:prose-p:mb-0"
+                  >
+                    {result}
+                  </ReactMarkdown>
                 </div>
               )}
             </div>
