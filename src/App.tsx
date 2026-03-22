@@ -18,7 +18,54 @@ import {
   Settings as SettingsIcon,
   Wrench,
   ExternalLink,
+  Key,
 } from 'lucide-react';
+
+async function sha256(message: string) {
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function QpiApiCard({ userUid }: { userUid?: string }) {
+  const [uid, setUid] = useState<string | null>(null);
+
+  const handleGenerate = async () => {
+    if (!userUid) return;
+    const hash = await sha256(userUid + "_qpi_secret_salt_2026");
+    const newUid = 'qpi_' + hash.substring(0, 32).toUpperCase();
+    setUid(newUid);
+  };
+
+  return (
+    <div 
+      className="group flex flex-col p-6 bg-white border border-gray-100 rounded-3xl hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:border-indigo-100 transition-all duration-300 relative overflow-hidden cursor-pointer h-full" 
+      onClick={handleGenerate}
+    >
+      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-400 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+      <div className="flex items-center justify-between mb-4">
+        <span className="text-2xl font-bold tracking-tight text-gray-900" style={{ fontFamily: '"Playfair Display", serif' }}>QPI API</span>
+        <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-indigo-50 transition-colors">
+          <Key size={16} className="text-gray-400 group-hover:text-indigo-600 transition-colors" />
+        </div>
+      </div>
+      <div className="flex-1 flex flex-col justify-end">
+        {uid ? (
+          <div className="bg-indigo-50/50 p-3 rounded-xl border border-indigo-100/50" onClick={(e) => e.stopPropagation()}>
+            <p className="text-[10px] text-indigo-400 font-bold mb-1 uppercase tracking-wider">발급된 UID</p>
+            <p className="text-xs font-mono text-indigo-800 break-all select-all">{uid}</p>
+          </div>
+        ) : (
+          <>
+            <h3 className="text-sm font-semibold text-gray-800 mb-1">인증 토큰 발급기</h3>
+            <p className="text-xs text-gray-500 leading-relaxed">클릭하여 쓸데없는 고유 QPI API Key를 무한정 발급받아보세요.</p>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 type Tab = 'utility' | 'timer' | 'planner' | 'stats' | 'settings';
 
@@ -250,7 +297,7 @@ export default function App() {
                 href="https://dasein.qpi.digital" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="group block p-6 bg-white border border-gray-100 rounded-3xl hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:border-red-100 transition-all duration-300 relative overflow-hidden"
+                className="group flex flex-col p-6 bg-white border border-gray-100 rounded-3xl hover:-translate-y-1 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:border-red-100 transition-all duration-300 relative overflow-hidden h-full"
               >
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-600 to-red-800 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                 <div className="flex items-center justify-between mb-4">
@@ -259,9 +306,13 @@ export default function App() {
                     <ExternalLink size={16} className="text-gray-400 group-hover:text-red-600 transition-colors" />
                   </div>
                 </div>
-                <h3 className="text-sm font-semibold text-gray-800 mb-1">학술 연구 검색엔진</h3>
-                <p className="text-xs text-gray-500 leading-relaxed">학술 자료와 논문을 빠르게 검색하고 탐색하세요.</p>
+                <div className="flex-1 flex flex-col justify-end">
+                  <h3 className="text-sm font-semibold text-gray-800 mb-1">학술 연구 검색엔진</h3>
+                  <p className="text-xs text-gray-500 leading-relaxed">학술 자료와 논문을 빠르게 검색하고 탐색하세요.</p>
+                </div>
               </a>
+
+              <QpiApiCard userUid={user.uid} />
 
             </div>
           </div>
