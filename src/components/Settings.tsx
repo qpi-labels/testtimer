@@ -16,8 +16,12 @@ function sanitize(value: string, maxLen = 10): string {
 }
 
 export function Settings({ user, token, onUpdate, onWithdraw }: SettingsProps) {
+  const fixedGrade = user.email.includes('cnsh31') ? 3 :
+                     user.email.includes('cnsh32') ? 2 :
+                     user.email.includes('cnsh33') ? 1 : null;
+
   const [nickname, setNickname] = useState(user.nickname);
-  const [grade, setGrade] = useState<number>(user.grade ?? 0);
+  const [grade, setGrade] = useState<number>(fixedGrade ?? user.grade ?? 0);
   const [saving, setSaving] = useState(false);
   const [showWithdraw, setShowWithdraw] = useState(false);
   const [withdrawEmail, setWithdrawEmail] = useState('');
@@ -80,15 +84,17 @@ export function Settings({ user, token, onUpdate, onWithdraw }: SettingsProps) {
             <label className="block text-sm font-medium text-gray-700 mb-2">학년</label>
             <div className="flex gap-2">
               {[0, 1, 2, 3].map(g => (
-                <button key={g} onClick={() => setGrade(g)}
+                <button key={g} onClick={() => fixedGrade === null && setGrade(g)}
+                  disabled={fixedGrade !== null}
                   className={`flex-1 py-2 rounded-xl text-sm font-medium border transition-all ${grade === g
                     ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
                     : 'bg-white text-gray-500 border-gray-200 hover:border-indigo-300 hover:text-indigo-500'
-                    }`}>
+                    } ${fixedGrade !== null && grade !== g ? 'opacity-50' : ''} ${fixedGrade !== null ? 'cursor-not-allowed' : ''}`}>
                   {g === 0 ? '미설정' : `${g}학년`}
                 </button>
               ))}
             </div>
+            {fixedGrade !== null && <p className="text-[11px] text-indigo-500 mt-2 font-medium bg-indigo-50/50 p-2 rounded-lg">학교 이메일({fixedGrade}학년) 계정에 따라 학년이 고정되었습니다.</p>}
           </div>
 
           {/* 닉네임 */}
