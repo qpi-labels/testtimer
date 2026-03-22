@@ -48,7 +48,7 @@ function renderMarkdown(text: string) {
     if (paragraph.startsWith('> ')) {
       return <blockquote key={index} className="pl-4 border-l-4 border-indigo-300 italic text-gray-600 mb-4 bg-gray-50/50 py-2">{parseInline(paragraph.replace(/^>\s*/gm, ''))}</blockquote>;
     }
-    
+
     return <p key={index} className="mb-4 last:mb-0 leading-relaxed">{parseInline(paragraph.replace(/\n/g, ' '))}</p>;
   });
 }
@@ -108,8 +108,11 @@ export function InsightUtility() {
             <Sparkles size={24} />
           </div>
           <div>
-            <h3 className="text-xl font-bold text-gray-900 tracking-tight">Insight</h3>
-            <p className="text-sm text-gray-500 font-medium mt-0.5">Google Gemini 기반 심연 분석 AI</p>
+            <div className="flex items-center gap-2">
+              <h3 className="text-xl font-bold text-gray-900 tracking-tight">Insight</h3>
+              <span className="px-1.5 py-0.5 rounded-md bg-indigo-100/80 text-indigo-600 text-[10px] font-bold uppercase tracking-wide border border-indigo-200/50">Beta</span>
+            </div>
+            <p className="text-sm text-gray-500 font-medium mt-0.5">Gemini 3 기반 글 작성 AI</p>
           </div>
         </div>
         <div className="w-10 h-10 rounded-full flex items-center justify-center bg-gray-50/80 group-hover:bg-white transition-colors">
@@ -136,7 +139,7 @@ export function InsightUtility() {
               </div>
               <h4 className="text-lg font-bold text-gray-900 mb-2">API 키 설정이 필요합니다</h4>
               <p className="text-sm text-gray-500 mb-6 max-w-sm mx-auto leading-relaxed">
-                가장 강력한 AI 모델을 사용하기 위해 Google AI Studio에서 무료 API 키를 발급받아 등록해주세요. (키는 브라우저에만 안전하게 보관됩니다)
+                강력한 AI 모델을 사용하기 위해 Google AI Studio에서 무료 API 키를 발급받아 등록해주세요. (키는 브라우저에만 안전하게 보관됩니다)
               </p>
               <div className="flex justify-center mb-6">
                 <a
@@ -177,7 +180,7 @@ export function InsightUtility() {
               <textarea
                 value={topic}
                 onChange={e => setTopic(e.target.value)}
-                placeholder="마음속 깊은 곳에 있는 불편한 진실을 꺼내보세요. (예: 완벽주의, 시기심, 사랑)"
+                placeholder="Insight는 수개월의 프롬프트 연구를 통해 탄생한 가장 솔직한 모델입니다."
                 className="w-full h-28 p-5 rounded-3xl bg-gray-50/50 border border-gray-200 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-50/50 focus:bg-white transition-all resize-none text-gray-800 text-[15px] leading-relaxed shadow-inner"
               />
               <button
@@ -186,11 +189,11 @@ export function InsightUtility() {
                 className="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-indigo-600/20 active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none disabled:shadow-none"
               >
                 {loading ? <Loader2 size={20} className="animate-spin" /> : <Sparkles size={20} />}
-                {loading ? '심연을 들여다보는 중...' : '통찰 마주하기'}
+                {loading ? '글 작성하는 중...' : '글 작성하기'}
               </button>
 
               {result && (
-                <div 
+                <div
                   className="mt-6 p-6 rounded-3xl bg-gray-50 border border-gray-100 text-gray-800"
                   style={{ fontFamily: '"Noto Serif KR", serif' }}
                 >
