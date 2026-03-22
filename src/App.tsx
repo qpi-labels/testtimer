@@ -23,10 +23,10 @@ import {
 type Tab = 'utility' | 'timer' | 'planner' | 'stats' | 'settings';
 
 const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
-  { key: 'utility', label: '유틸리티', icon: <Wrench size={15} /> },
   { key: 'planner', label: '플래너', icon: <ClipboardList size={15} /> },
-  { key: 'timer', label: '타이머', icon: <TimerIcon size={15} /> },
   { key: 'stats', label: '통계', icon: <BarChart2 size={15} /> },
+  { key: 'timer', label: '타이머', icon: <TimerIcon size={15} /> },
+  { key: 'utility', label: '유틸리티', icon: <Wrench size={15} /> },
   { key: 'settings', label: '설정', icon: <SettingsIcon size={15} /> },
 ];
 
