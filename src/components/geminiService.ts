@@ -38,7 +38,7 @@ TONE & LANGUAGE:
 
 export async function generateInsight(apiKey: string, topic: string) {
    const ai = new GoogleGenAI({ apiKey });
-   const model = "gemini-3.1-pro-preview";
+   const model = "gemini-2.5-pro";
 
    const response = await ai.models.generateContent({
       model,
