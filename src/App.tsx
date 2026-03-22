@@ -72,7 +72,7 @@ function QpiApiCard({ userUid }: { userUid?: string }) {
         ) : (
           <>
             <h3 className="text-sm font-semibold text-gray-800 mb-1">인증 토큰 발급기</h3>
-            <p className="text-xs text-gray-500 leading-relaxed">클릭하여 고유 QPI API Key를 발급받아보세요.</p>
+            <p className="text-xs text-gray-500 leading-relaxed">클릭하여 고유 QPI API Key를 발급받아보세요. 아무 짝에도 쓸모 없답니다!</p>
           </>
         )}
       </div>
@@ -180,8 +180,8 @@ function MobileTabBar({ tab, setTab }: { tab: Tab; setTab: (t: Tab) => void }) {
                 ref={el => { btnRefs.current[i] = el; }}
                 onClick={() => setTab(t.key)}
                 className={`flex flex-col items-center justify-center w-16 h-16 -mt-10 rounded-full shadow-lg border-4 border-white transition-all transform active:scale-95 ${tab === t.key
-                    ? 'bg-indigo-600 text-white shadow-indigo-200'
-                    : 'bg-indigo-400 text-white hover:bg-indigo-500 shadow-sm'
+                  ? 'bg-indigo-600 text-white shadow-indigo-200'
+                  : 'bg-indigo-400 text-white hover:bg-indigo-500 shadow-sm'
                   }`}
               >
                 {t.icon && React.cloneElement(t.icon as React.ReactElement, { size: 28 })}
