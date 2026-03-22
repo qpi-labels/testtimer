@@ -15,17 +15,11 @@ export function TimeGacha({ token, onLogAdded }: { token: string; onLogAdded: (t
 
     try {
       if (roll < 0.00001) {
-        // 0.001% jackpot (24 hours)
-        const chunk = 6 * 60 * 60 * 1000; // 6 hours
-        let lastStats: any;
-        // Split into 4 chunks to bypass the 7-hour limit per log
-        for (let i = 0; i < 4; i++) {
-          const end = Date.now() - (i * chunk);
-          const start = end - chunk;
-          lastStats = await api.addLog(token, "공부시간 뽑기", start, end);
-        }
+        // 0.001% jackpot (5 hours)
+        const chunk = 5 * 60 * 60 * 1000; // 5 hours
+        let lastStats = await api.addLog(token, "공부시간 뽑기", Date.now() - chunk, Date.now());
         if (lastStats) onLogAdded(lastStats.totalTime, lastStats.subjectStats);
-        setResult({ text: "🎉 기적적인 운! 0.001% 확률로 24시간이 추가되었습니다! 🎉", isJackpot: true });
+        setResult({ text: "🎉 기적적인 운! 0.001% 확률로 5시간이 추가되었습니다! 🎉", isJackpot: true });
 
       } else {
         let timeMs = 0;
@@ -33,15 +27,13 @@ export function TimeGacha({ token, onLogAdded }: { token: string; onLogAdded: (t
         let isJackpot = false;
 
         if (roll < 0.01) {
-          // 0.999% chance (11 ~ 600sec)
-          const sec = Math.floor(Math.random() * 590) + 11;
-          timeMs = sec * 1000;
-          if (sec >= 60) message = `🎊 당첨! ${Math.floor(sec / 60)}분 ${sec % 60}초 추가 완료!`;
-          else message = `🎊 당첨! ${sec}초 추가 완료!`;
+          // 0.999% chance (50sec)
+          timeMs = 50 * 1000;
+          message = `🎊 당첨! 50초 추가 완료!`;
           isJackpot = true;
         } else {
-          // 99% chance (3 ~ 10sec)
-          const sec = Math.floor(Math.random() * 8) + 3;
+          // 99% chance (1 ~ 3sec)
+          const sec = Math.floor(Math.random() * 3) + 1;
           timeMs = sec * 1000;
           message = `+ ${sec}초 추가 완료!`;
         }
@@ -72,7 +64,7 @@ export function TimeGacha({ token, onLogAdded }: { token: string; onLogAdded: (t
 
       <div className="flex-1 flex flex-col justify-end">
         <h3 className="text-sm font-semibold text-gray-800 mb-1">공부시간 가챠</h3>
-        <p className="text-xs text-gray-500 leading-relaxed mb-4">최대 24시간 공부 시간 뽑기</p>
+        <p className="text-xs text-gray-500 leading-relaxed mb-4">최대 5시간 공부 시간 뽑기</p>
 
         {result && (
           <div className={`mb-4 p-3 rounded-xl border text-center text-sm font-bold ${result.isJackpot ? 'bg-orange-50 border-orange-200 text-orange-600 animate-pulse' : 'bg-gray-50 border-gray-200 text-gray-600'}`}>
