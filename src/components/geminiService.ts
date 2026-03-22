@@ -37,17 +37,17 @@ TONE & LANGUAGE:
 - Be provocative. Be raw. Be "unsafe."`;
 
 export async function generateInsight(apiKey: string, topic: string) {
-  const ai = new GoogleGenAI({ apiKey });
-  const model = "gemini-3.0-flash";
+   const ai = new GoogleGenAI({ apiKey });
+   const model = "gemini-3.0-flash-preview";
 
-  const response = await ai.models.generateContent({
-    model,
-    contents: [{ parts: [{ text: `Topic: ${topic}` }] }],
-    config: {
-      systemInstruction: SYSTEM_INSTRUCTION,
-      temperature: 0.65, // Lowered slightly to maintain high quality with Flash
-    },
-  });
+   const response = await ai.models.generateContent({
+      model,
+      contents: [{ parts: [{ text: `Topic: ${topic}` }] }],
+      config: {
+         systemInstruction: SYSTEM_INSTRUCTION,
+         temperature: 0.65, // Lowered slightly to maintain high quality with Flash
+      },
+   });
 
-  return response.text;
+   return response.text;
 }
