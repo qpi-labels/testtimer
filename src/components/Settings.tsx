@@ -130,7 +130,7 @@ export function Settings({ user, token, onUpdate, onWithdraw }: SettingsProps) {
           </button>
         ) : (
           <div className="space-y-3">
-            <p className="text-sm text-gray-600">잘못된 탈퇴를 방지하기ㅇ 위해 가입한 이메일 주소를 입력하세요.</p>
+            <p className="text-sm text-gray-600">잘못된 탈퇴를 방지하기 위해 가입한 이메일 주소를 입력하세요.</p>
             <input type="text" value={withdrawEmail}
               onChange={e => setWithdrawEmail(e.target.value)}
               placeholder={user.email}
